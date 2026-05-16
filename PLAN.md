@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P0-T1: Bootstrap Spring Boot project with Docker Compose for PostgreSQL, Redis, Kafka, and app service.
+- [ ] P0-T2: Add Docker Compose services: `postgres`, `redis`, `kafka`, and app service wiring.
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -17,7 +17,7 @@
 Establish runnable backend foundation and project structure for high-concurrency development.
 
 ### Tasks
-- [ ] P0-T1: Initialize Spring Boot project (Web, Data JPA, Validation, Actuator, AOP, Security basic).
+- [x] P0-T1: Initialize Spring Boot project (Web, Data JPA, Validation, Actuator, AOP, Security basic).
 - [ ] P0-T2: Add Docker Compose services: `postgres`, `redis`, `kafka`, `zookeeper` (or KRaft Kafka setup).
 - [ ] P0-T3: Define package structure: `api`, `service`, `domain`, `infra`, `config`, `observability`.
 - [ ] P0-T4: Add baseline configs (`application.yml` profiles: `local`, `test`).
