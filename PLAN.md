@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P3-T5: Add outbox pattern (or transactional event publish) to avoid dual-write inconsistency.
+- [ ] P4-T1: Cache hot product reads in Redis with TTL.
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -103,7 +103,7 @@ Move non-blocking work out of request path and use team’s Kafka experience eff
 - [x] P3-T2: Implement consumer for invoice generation.
 - [x] P3-T3: Implement consumer for notifications.
 - [x] P3-T4: Add DLQ and structured failure logging.
-- [ ] P3-T5: Add outbox pattern (or transactional event publish) to avoid dual-write inconsistency.
+- [x] P3-T5: Add outbox pattern (or transactional event publish) to avoid dual-write inconsistency.
 
 ### Acceptance Criteria
 - Checkout latency decreases vs inline invoice/notification flow.

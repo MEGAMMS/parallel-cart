@@ -25,3 +25,7 @@ app:
     retry:
       max-attempts: 3
       interval-ms: 1000
+  outbox:
+    max-publish-attempts: 5
+    publisher:
+      fixed-delay-ms: 2000

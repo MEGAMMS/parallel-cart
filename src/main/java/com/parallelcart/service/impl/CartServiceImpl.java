@@ -14,8 +14,8 @@ import com.parallelcart.domain.model.Product;
 import com.parallelcart.domain.model.User;
 import com.parallelcart.domain.model.enums.OrderStatus;
 import com.parallelcart.domain.model.enums.PaymentStatus;
-import com.parallelcart.infra.messaging.OrderEventPublisher;
 import com.parallelcart.infra.messaging.events.OrderCreatedEvent;
+import com.parallelcart.infra.messaging.OutboxEventService;
 import com.parallelcart.infra.repository.CartItemRepository;
 import com.parallelcart.infra.repository.CartRepository;
 import com.parallelcart.infra.repository.InventoryRepository;
@@ -44,7 +44,7 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepository cartItemRepository;
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
-    private final OrderEventPublisher orderEventPublisher;
+    private final OutboxEventService outboxEventService;
 
     public CartServiceImpl(
             UserRepository userRepository,
@@ -54,7 +54,7 @@ public class CartServiceImpl implements CartService {
             CartItemRepository cartItemRepository,
             OrderRepository orderRepository,
             PaymentRepository paymentRepository,
-            OrderEventPublisher orderEventPublisher
+            OutboxEventService outboxEventService
     ) {
         this.userRepository = userRepository;
         this.productRepository = productRepository;
@@ -63,7 +63,7 @@ public class CartServiceImpl implements CartService {
         this.cartItemRepository = cartItemRepository;
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
-        this.orderEventPublisher = orderEventPublisher;
+        this.outboxEventService = outboxEventService;
     }
 
     @Override
@@ -188,7 +188,7 @@ public class CartServiceImpl implements CartService {
         cart.touch();
         cartRepository.save(cart);
 
-        orderEventPublisher.publishOrderCreated(new OrderCreatedEvent(
+        outboxEventService.enqueueOrderCreated(new OrderCreatedEvent(
                 order.getId(),
                 user.getId(),
                 payment.getId(),
