@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# extension specific ignores
+parallel-cart-output.md
+parallel-cart-output.txt
