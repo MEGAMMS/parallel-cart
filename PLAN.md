@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P3-T4: Add DLQ and structured failure logging.
+- [ ] P3-T5: Add outbox pattern (or transactional event publish) to avoid dual-write inconsistency.
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -102,7 +102,7 @@ Move non-blocking work out of request path and use team’s Kafka experience eff
 - [x] P3-T1: Publish `order.created` event after successful checkout.
 - [x] P3-T2: Implement consumer for invoice generation.
 - [x] P3-T3: Implement consumer for notifications.
-- [ ] P3-T4: Add DLQ and structured failure logging.
+- [x] P3-T4: Add DLQ and structured failure logging.
 - [ ] P3-T5: Add outbox pattern (or transactional event publish) to avoid dual-write inconsistency.
 
 ### Acceptance Criteria

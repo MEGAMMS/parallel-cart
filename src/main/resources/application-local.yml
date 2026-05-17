@@ -21,3 +21,7 @@ app:
   kafka:
     topics:
       order-created: order.created
+      order-created-dlq: order.created.dlq
+    retry:
+      max-attempts: 3
+      interval-ms: 1000
