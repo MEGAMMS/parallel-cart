@@ -14,3 +14,7 @@ spring:
       port: 6379
   kafka:
     bootstrap-servers: localhost:9092
+management:
+  endpoint:
+    health:
+      validate-group-membership: false

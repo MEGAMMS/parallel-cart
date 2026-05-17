@@ -16,6 +16,11 @@ management:
     health:
       probes:
         enabled: true
+      group:
+        readiness:
+          include: readinessState,db,redis,kafka
+        liveness:
+          include: livenessState,ping
   health:
     redis:
       enabled: true

@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P0-T5: Add health checks and readiness checks for DB/Redis/Kafka connectivity.
+- [ ] P1-T1: Implement entities: `User`, `Product`, `Inventory`, `Cart`, `CartItem`, `Order`, `OrderItem`, `Payment`.
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -21,7 +21,7 @@ Establish runnable backend foundation and project structure for high-concurrency
 - [x] P0-T2: Add Docker Compose services: `postgres`, `redis`, `kafka`, `zookeeper` (or KRaft Kafka setup).
 - [x] P0-T3: Define package structure: `api`, `service`, `domain`, `infra`, `config`, `observability`.
 - [x] P0-T4: Add baseline configs (`application.yml` profiles: `local`, `test`).
-- [ ] P0-T5: Add health checks and readiness checks for DB/Redis/Kafka connectivity.
+- [x] P0-T5: Add health checks and readiness checks for DB/Redis/Kafka connectivity.
 
 ### Acceptance Criteria
 - `docker compose up` starts all infra services.
