@@ -13,5 +13,5 @@ public interface CartService {
 
     CartResponse getCart(Long userId);
 
-    CheckoutResponse checkout(Long userId);
+    CheckoutResponse checkout(Long userId, String idempotencyKey);
 }

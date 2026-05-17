@@ -41,6 +41,9 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
+
+    @Column(name = "idempotency_key", nullable = false, unique = true)
+    private String idempotencyKey;
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -78,5 +81,13 @@ public class Order {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public void setIdempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
     }
 }

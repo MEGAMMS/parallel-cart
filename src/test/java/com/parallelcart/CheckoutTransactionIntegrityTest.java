@@ -71,7 +71,7 @@ class CheckoutTransactionIntegrityTest {
         createInventory(product, 10);
 
         cartService.addItem(user.getId(), new CartItemRequest(product.getId(), 2));
-        CheckoutResponse response = cartService.checkout(user.getId());
+        CheckoutResponse response = cartService.checkout(user.getId(), "idem-success-1");
 
         assertEquals(1, orderRepository.count());
         assertEquals(1, paymentRepository.count());
@@ -82,6 +82,24 @@ class CheckoutTransactionIntegrityTest {
     }
 
     @Test
+    void checkoutShouldReturnSameOrderForSameIdempotencyKey() {
+        User user = createUser("idempotent@parallelcart.local");
+        Product product = createProduct("SKU-IDEMP", BigDecimal.valueOf(20));
+        createInventory(product, 10);
+
+        cartService.addItem(user.getId(), new CartItemRequest(product.getId(), 1));
+
+        CheckoutResponse first = cartService.checkout(user.getId(), "idem-dup-1");
+        CheckoutResponse second = cartService.checkout(user.getId(), "idem-dup-1");
+
+        assertEquals(first.orderId(), second.orderId());
+        assertEquals(first.paymentId(), second.paymentId());
+        assertEquals(1, orderRepository.count());
+        assertEquals(1, paymentRepository.count());
+        assertEquals(9, inventoryRepository.findByProduct(product).orElseThrow().getAvailableQuantity());
+    }
+
+    @Test
     void checkoutShouldRollbackAllWhenFailureOccursMidFlow() {
         User user = createUser("rollback@parallelcart.local");
         Product product = createProduct("SKU-ROLLBACK", BigDecimal.ZERO);
@@ -89,7 +107,7 @@ class CheckoutTransactionIntegrityTest {
 
         cartService.addItem(user.getId(), new CartItemRequest(product.getId(), 2));
 
-        assertThrows(IllegalStateException.class, () -> cartService.checkout(user.getId()));
+        assertThrows(IllegalStateException.class, () -> cartService.checkout(user.getId(), "idem-rollback-1"));
 
         assertEquals(0, orderRepository.count());
         assertEquals(0, paymentRepository.count());

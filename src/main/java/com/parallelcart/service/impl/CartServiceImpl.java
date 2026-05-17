@@ -122,8 +122,22 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public CheckoutResponse checkout(Long userId) {
+    public CheckoutResponse checkout(Long userId, String idempotencyKey) {
         User user = getUser(userId);
+
+        Order existingOrder = orderRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey).orElse(null);
+        if (existingOrder != null) {
+            Payment existingPayment = paymentRepository.findFirstByOrderId(existingOrder.getId()).orElseThrow(
+                    () -> new IllegalStateException("Payment missing for existing idempotent order " + existingOrder.getId())
+            );
+            return new CheckoutResponse(
+                    existingOrder.getId(),
+                    existingPayment.getId(),
+                    existingOrder.getTotalAmount(),
+                    existingOrder.getStatus().name()
+            );
+        }
+
         Cart cart = getOrCreateCart(user);
         List<CartItem> items = cartItemRepository.findByCart(cart);
 
@@ -153,6 +167,7 @@ public class CartServiceImpl implements CartService {
             throw new IllegalStateException("Invalid checkout total");
         }
 
+        order.setIdempotencyKey(idempotencyKey);
         order.setTotalAmount(total);
         order.setStatus(OrderStatus.PAID);
         order = orderRepository.save(order);

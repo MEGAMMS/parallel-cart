@@ -2,6 +2,7 @@ package com.parallelcart.api.controller;
 
 import com.parallelcart.api.dto.CartItemRequest;
 import com.parallelcart.api.dto.CartResponse;
+import com.parallelcart.api.dto.CheckoutRequest;
 import com.parallelcart.api.dto.CheckoutResponse;
 import com.parallelcart.api.dto.UpdateCartItemRequest;
 import com.parallelcart.service.CartService;
@@ -50,7 +51,10 @@ public class CartController {
     }
 
     @PostMapping("/checkout")
-    public CheckoutResponse checkout(@PathVariable Long userId) {
-        return cartService.checkout(userId);
+    public CheckoutResponse checkout(
+            @PathVariable Long userId,
+            @Valid @RequestBody CheckoutRequest request
+    ) {
+        return cartService.checkout(userId, request.idempotencyKey());
     }
 }
