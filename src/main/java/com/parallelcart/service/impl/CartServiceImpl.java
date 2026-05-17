@@ -149,6 +149,10 @@ public class CartServiceImpl implements CartService {
             total = total.add(cartItem.getProduct().getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity())));
         }
 
+        if (total.signum() <= 0) {
+            throw new IllegalStateException("Invalid checkout total");
+        }
+
         order.setTotalAmount(total);
         order.setStatus(OrderStatus.PAID);
         order = orderRepository.save(order);
