@@ -23,12 +23,15 @@ import com.parallelcart.infra.repository.OrderRepository;
 import com.parallelcart.infra.repository.PaymentRepository;
 import com.parallelcart.infra.repository.ProductRepository;
 import com.parallelcart.infra.repository.UserRepository;
+import com.parallelcart.service.CacheInvalidationService;
 import com.parallelcart.service.CartService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +48,7 @@ public class CartServiceImpl implements CartService {
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final OutboxEventService outboxEventService;
+    private final CacheInvalidationService cacheInvalidationService;
 
     public CartServiceImpl(
             UserRepository userRepository,
@@ -54,7 +58,8 @@ public class CartServiceImpl implements CartService {
             CartItemRepository cartItemRepository,
             OrderRepository orderRepository,
             PaymentRepository paymentRepository,
-            OutboxEventService outboxEventService
+            OutboxEventService outboxEventService,
+            CacheInvalidationService cacheInvalidationService
     ) {
         this.userRepository = userRepository;
         this.productRepository = productRepository;
@@ -64,6 +69,7 @@ public class CartServiceImpl implements CartService {
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
         this.outboxEventService = outboxEventService;
+        this.cacheInvalidationService = cacheInvalidationService;
     }
 
     @Override
@@ -149,6 +155,9 @@ public class CartServiceImpl implements CartService {
         if (items.isEmpty()) {
             throw new IllegalStateException("Cart is empty");
         }
+        Set<Long> touchedProductIds = items.stream()
+                .map(item -> item.getProduct().getId())
+                .collect(Collectors.toSet());
 
         BigDecimal total = BigDecimal.ZERO;
         Order order = new Order();
@@ -196,6 +205,7 @@ public class CartServiceImpl implements CartService {
                 order.getStatus().name(),
                 Instant.now()
         ));
+        cacheInvalidationService.evictProductsAfterCommit(touchedProductIds);
 
         return new CheckoutResponse(order.getId(), payment.getId(), total, order.getStatus().name());
     }
