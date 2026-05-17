@@ -1,6 +1,6 @@
-# Phase Verification Guide (P0, P1, P2)
+# Phase Verification Guide (P0, P1, P2, P3)
 
-This file gives runnable commands to verify completed work for the first three phases.
+This file gives runnable commands to verify completed work for phases P0-P3.
 
 ## Prerequisites
 
@@ -153,6 +153,85 @@ wait
 Expected:
 - no app crash
 - conflict responses may appear under contention, but no server failure
+
+## P3 Verification — Kafka Async Flow, DLQ Handler, and Outbox
+
+### 1) Reset and start fresh environment
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+### 2) Trigger checkout to produce `order.created`
+
+```bash
+USER_ID=2
+PRODUCT_ID=1
+IDEM_KEY="verify-phase-p3-$(date +%s)"
+
+curl -s -X POST http://localhost:8080/api/carts/${USER_ID}/items \
+  -H "Content-Type: application/json" \
+  -d "{\"productId\":${PRODUCT_ID},\"quantity\":1}"
+
+curl -s -X POST http://localhost:8080/api/carts/${USER_ID}/checkout \
+  -H "Content-Type: application/json" \
+  -d "{\"idempotencyKey\":\"${IDEM_KEY}\"}"
+```
+
+Expected:
+- checkout returns `orderId` and `paymentId`
+
+### 3) Verify async consumers persisted side effects
+
+Replace `<ORDER_ID>` with the checkout `orderId`.
+
+```bash
+docker compose exec -T postgres psql -U parallel_cart -d parallel_cart -tAc \
+  "select count(*) from invoices where order_id = <ORDER_ID>;"
+
+docker compose exec -T postgres psql -U parallel_cart -d parallel_cart -tAc \
+  "select count(*) from notification_logs where order_id = <ORDER_ID>;"
+```
+
+Expected:
+- invoice count `>= 1`
+- notification count `>= 1`
+
+### 4) Verify outbox event was published
+
+```bash
+docker compose exec -T postgres psql -U parallel_cart -d parallel_cart -tAc \
+  "select count(*) from outbox_events where aggregate_id = <ORDER_ID> and event_type = 'ORDER_CREATED' and status = 'PUBLISHED';"
+```
+
+Expected:
+- count `>= 1`
+
+### 5) Optional: check last outbox records snapshot
+
+```bash
+docker compose exec -T postgres psql -U parallel_cart -d parallel_cart -c \
+  "select id, event_type, aggregate_id, status, publish_attempts, published_at from outbox_events order by id desc limit 5;"
+```
+
+Expected:
+- latest `ORDER_CREATED` row appears as `PUBLISHED`
+
+### 6) One-command script verification
+
+```bash
+./scripts/verify_phase.sh p3
+```
+
+Expected:
+- script exits with `0`
+- prints formatted checkout response
+- prints pre-check table counters (before checkout)
+- prints order/payment row for the created order
+- prints outbox row before and after async publish
+- confirms invoice, notification, and published outbox rows
+- prints final delta summary for `outbox_events`, `invoices`, and `notification_logs`
 
 ## Cleanup
 
