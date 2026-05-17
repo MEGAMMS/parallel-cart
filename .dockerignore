@@ -1,0 +1,18 @@
+.git
+.gitignore
+.gitattributes
+
+# Build outputs
+target
+
+# Editor / OS
+.idea
+.vscode
+*.iml
+.DS_Store
+
+# Docs and misc not needed for image build
+parallel-programming-project-2026.pdf
+PLAN.md
+docs
+scripts
