@@ -168,6 +168,7 @@ public class CartServiceImpl implements CartService {
     }
 
     private void reserveInventoryWithRetry(Product product, Integer requestedQuantity) {
+        ObjectOptimisticLockingFailureException lastConflict = null;
         for (int attempt = 1; attempt <= INVENTORY_RETRY_MAX_ATTEMPTS; attempt++) {
             Inventory inventory = inventoryRepository.findByProduct(product)
                     .orElseThrow(() -> new IllegalStateException("Inventory missing for product " + product.getId()));
@@ -181,11 +182,34 @@ public class CartServiceImpl implements CartService {
                 inventoryRepository.saveAndFlush(inventory);
                 return;
             } catch (ObjectOptimisticLockingFailureException ex) {
-                if (attempt == INVENTORY_RETRY_MAX_ATTEMPTS) {
-                    throw ex;
-                }
+                lastConflict = ex;
                 sleepWithJitter();
             }
+        }
+
+        reserveInventoryWithPessimisticLock(product, requestedQuantity, lastConflict);
+    }
+
+    private void reserveInventoryWithPessimisticLock(
+            Product product,
+            Integer requestedQuantity,
+            ObjectOptimisticLockingFailureException lastConflict
+    ) {
+        Inventory lockedInventory = inventoryRepository.findByProductForUpdate(product)
+                .orElseThrow(() -> new IllegalStateException("Inventory missing for product " + product.getId()));
+
+        if (lockedInventory.getAvailableQuantity() < requestedQuantity) {
+            throw new IllegalStateException("Insufficient inventory for product " + product.getId());
+        }
+
+        lockedInventory.setAvailableQuantity(lockedInventory.getAvailableQuantity() - requestedQuantity);
+        try {
+            inventoryRepository.saveAndFlush(lockedInventory);
+        } catch (ObjectOptimisticLockingFailureException ex) {
+            if (lastConflict != null) {
+                ex.addSuppressed(lastConflict);
+            }
+            throw ex;
         }
     }
 
