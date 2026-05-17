@@ -24,11 +24,21 @@ spring:
       properties:
         spring.json.trusted.packages: "com.parallelcart.infra.messaging.events"
         spring.json.value.default.type: "com.parallelcart.infra.messaging.events.OrderCreatedEvent"
+    listener:
+      concurrency: 2
 
 app:
   cache:
     product:
       ttl-seconds: 60
+  executors:
+    async:
+      core-pool-size: 4
+      max-pool-size: 8
+      queue-capacity: 100
+      keep-alive-seconds: 60
+    scheduler:
+      pool-size: 2
   kafka:
     topics:
       order-created: order.created
