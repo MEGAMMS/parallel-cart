@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P1-T2: Implement APIs: products list/detail, cart add/update/remove, checkout.
+- [ ] P2-T1: Add optimistic locking (`@Version`) on `Inventory`.
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -41,9 +41,9 @@ Implement minimum features required to exercise non-functional requirements.
 
 ### Tasks
 - [x] P1-T1: Implement entities: `User`, `Product`, `Inventory`, `Cart`, `CartItem`, `Order`, `OrderItem`, `Payment`.
-- [ ] P1-T2: Implement APIs: products list/detail, cart add/update/remove, checkout.
-- [ ] P1-T3: Seed sample data for load tests.
-- [ ] P1-T4: Add DTO validation and uniform error handling.
+- [x] P1-T2: Implement APIs: products list/detail, cart add/update/remove, checkout.
+- [x] P1-T3: Seed sample data for load tests.
+- [x] P1-T4: Add DTO validation and uniform error handling.
 
 ### Acceptance Criteria
 - Checkout path works end-to-end under single-user flow.
