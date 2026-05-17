@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P3-T1: Publish `order.created` event after successful checkout.
+- [ ] P3-T2: Implement consumer for invoice generation.
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -99,7 +99,7 @@ Move non-blocking work out of request path and use team’s Kafka experience eff
   - Dead-letter topic (`*.dlq`) + retry/backoff policy.
 
 ### Tasks
-- [ ] P3-T1: Publish `order.created` event after successful checkout.
+- [x] P3-T1: Publish `order.created` event after successful checkout.
 - [ ] P3-T2: Implement consumer for invoice generation.
 - [ ] P3-T3: Implement consumer for notifications.
 - [ ] P3-T4: Add DLQ and structured failure logging.

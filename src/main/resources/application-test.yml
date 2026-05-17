@@ -18,3 +18,8 @@ management:
   endpoint:
     health:
       validate-group-membership: false
+
+app:
+  kafka:
+    topics:
+      order-created: order.created

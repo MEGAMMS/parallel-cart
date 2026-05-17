@@ -14,6 +14,8 @@ import com.parallelcart.domain.model.Product;
 import com.parallelcart.domain.model.User;
 import com.parallelcart.domain.model.enums.OrderStatus;
 import com.parallelcart.domain.model.enums.PaymentStatus;
+import com.parallelcart.infra.messaging.OrderEventPublisher;
+import com.parallelcart.infra.messaging.events.OrderCreatedEvent;
 import com.parallelcart.infra.repository.CartItemRepository;
 import com.parallelcart.infra.repository.CartRepository;
 import com.parallelcart.infra.repository.InventoryRepository;
@@ -42,6 +44,7 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepository cartItemRepository;
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
+    private final OrderEventPublisher orderEventPublisher;
 
     public CartServiceImpl(
             UserRepository userRepository,
@@ -50,7 +53,8 @@ public class CartServiceImpl implements CartService {
             CartRepository cartRepository,
             CartItemRepository cartItemRepository,
             OrderRepository orderRepository,
-            PaymentRepository paymentRepository
+            PaymentRepository paymentRepository,
+            OrderEventPublisher orderEventPublisher
     ) {
         this.userRepository = userRepository;
         this.productRepository = productRepository;
@@ -59,6 +63,7 @@ public class CartServiceImpl implements CartService {
         this.cartItemRepository = cartItemRepository;
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
+        this.orderEventPublisher = orderEventPublisher;
     }
 
     @Override
@@ -182,6 +187,15 @@ public class CartServiceImpl implements CartService {
         cartItemRepository.deleteAll(items);
         cart.touch();
         cartRepository.save(cart);
+
+        orderEventPublisher.publishOrderCreated(new OrderCreatedEvent(
+                order.getId(),
+                user.getId(),
+                payment.getId(),
+                total,
+                order.getStatus().name(),
+                Instant.now()
+        ));
 
         return new CheckoutResponse(order.getId(), payment.getId(), total, order.getStatus().name());
     }

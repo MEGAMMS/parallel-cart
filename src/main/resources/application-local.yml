@@ -16,3 +16,8 @@ spring:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       auto-offset-reset: earliest
+
+app:
+  kafka:
+    topics:
+      order-created: order.created
