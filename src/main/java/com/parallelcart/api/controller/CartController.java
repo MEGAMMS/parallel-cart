@@ -5,6 +5,7 @@ import com.parallelcart.api.dto.CartResponse;
 import com.parallelcart.api.dto.CheckoutRequest;
 import com.parallelcart.api.dto.CheckoutResponse;
 import com.parallelcart.api.dto.UpdateCartItemRequest;
+import com.parallelcart.service.CheckoutSaturationGuard;
 import com.parallelcart.service.CartService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,9 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class CartController {
 
     private final CartService cartService;
+    private final CheckoutSaturationGuard checkoutSaturationGuard;
 
-    public CartController(CartService cartService) {
+    public CartController(CartService cartService, CheckoutSaturationGuard checkoutSaturationGuard) {
         this.cartService = cartService;
+        this.checkoutSaturationGuard = checkoutSaturationGuard;
     }
 
     @GetMapping
@@ -55,6 +58,8 @@ public class CartController {
             @PathVariable Long userId,
             @Valid @RequestBody CheckoutRequest request
     ) {
-        return cartService.checkout(userId, request.idempotencyKey());
+        return checkoutSaturationGuard.execute(
+                "checkout",
+                () -> cartService.checkout(userId, request.idempotencyKey()));
     }
 }

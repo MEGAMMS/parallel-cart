@@ -39,6 +39,9 @@ app:
       keep-alive-seconds: 60
     scheduler:
       pool-size: 2
+  backpressure:
+    checkout:
+      max-concurrent: 50
   kafka:
     topics:
       order-created: order.created

@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P4-T4: Add backpressure/fail-fast behavior when system saturated.
+- [ ] P5-T1: Build daily sales aggregation batch job (chunk-based processing).
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -124,7 +124,7 @@ Improve latency and stability via Redis and bounded execution resources.
 - [x] P4-T1: Cache hot product reads in Redis with TTL.
 - [x] P4-T2: Invalidate/update cache on product/inventory mutation.
 - [x] P4-T3: Configure bounded thread pools and queue capacities.
-- [ ] P4-T4: Add backpressure/fail-fast behavior when system saturated.
+- [x] P4-T4: Add backpressure/fail-fast behavior when system saturated.
 
 ### Acceptance Criteria
 - Read latency improves measurably for hot products.

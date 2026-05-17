@@ -1,6 +1,7 @@
 package com.parallelcart.api.controller;
 
 import com.parallelcart.api.dto.ApiErrorResponse;
+import com.parallelcart.service.SystemSaturatedException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.HashMap;
@@ -84,6 +85,22 @@ public class GlobalExceptionHandler {
                 Map.of()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(SystemSaturatedException.class)
+    public ResponseEntity<ApiErrorResponse> handleSaturation(
+            SystemSaturatedException ex,
+            HttpServletRequest request
+    ) {
+        ApiErrorResponse response = new ApiErrorResponse(
+                Instant.now(),
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                "SystemSaturated",
+                ex.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
     }
 
     @ExceptionHandler(Exception.class)
