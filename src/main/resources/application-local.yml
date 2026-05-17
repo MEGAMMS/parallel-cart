@@ -26,6 +26,9 @@ spring:
         spring.json.value.default.type: "com.parallelcart.infra.messaging.events.OrderCreatedEvent"
 
 app:
+  cache:
+    product:
+      ttl-seconds: 60
   kafka:
     topics:
       order-created: order.created

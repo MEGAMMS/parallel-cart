@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P4-T1: Cache hot product reads in Redis with TTL.
+- [ ] P4-T2: Invalidate/update cache on product/inventory mutation.
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -121,7 +121,7 @@ Move non-blocking work out of request path and use team’s Kafka experience eff
 Improve latency and stability via Redis and bounded execution resources.
 
 ### Tasks
-- [ ] P4-T1: Cache hot product reads in Redis with TTL.
+- [x] P4-T1: Cache hot product reads in Redis with TTL.
 - [ ] P4-T2: Invalidate/update cache on product/inventory mutation.
 - [ ] P4-T3: Configure bounded thread pools and queue capacities.
 - [ ] P4-T4: Add backpressure/fail-fast behavior when system saturated.

@@ -5,6 +5,7 @@ import com.parallelcart.domain.model.Product;
 import com.parallelcart.infra.repository.ProductRepository;
 import com.parallelcart.service.ProductService;
 import java.util.List;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,11 +18,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(cacheNames = "products", key = "'all'")
     public List<ProductResponse> listProducts() {
         return productRepository.findAll().stream().map(this::toResponse).toList();
     }
 
     @Override
+    @Cacheable(cacheNames = "products", key = "'id:' + #id")
     public ProductResponse getProduct(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found: " + id));
