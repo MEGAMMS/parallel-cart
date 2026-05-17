@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P2-T1: Add optimistic locking (`@Version`) on `Inventory`.
+- [ ] P2-T3: Add fallback pessimistic lock strategy for hot products.
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -60,8 +60,8 @@ Implement minimum features required to exercise non-functional requirements.
 Guarantee correctness under concurrent access and preserve ACID behavior.
 
 ### Tasks
-- [ ] P2-T1: Add optimistic locking (`@Version`) on `Inventory`.
-- [ ] P2-T2: Add retry policy for optimistic lock conflicts (bounded retries + jitter).
+- [x] P2-T1: Add optimistic locking (`@Version`) on `Inventory`.
+- [x] P2-T2: Add retry policy for optimistic lock conflicts (bounded retries + jitter).
 - [ ] P2-T3: Add fallback pessimistic lock strategy for hot products.
 - [ ] P2-T4: Make checkout transactional (payment + inventory update + order create all-or-nothing).
 - [ ] P2-T5: Add idempotency key on checkout to prevent duplicate orders.

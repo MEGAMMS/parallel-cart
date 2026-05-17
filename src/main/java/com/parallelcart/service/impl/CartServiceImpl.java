@@ -25,12 +25,15 @@ import com.parallelcart.service.CartService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.UUID;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CartServiceImpl implements CartService {
+    private static final int INVENTORY_RETRY_MAX_ATTEMPTS = 3;
 
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
@@ -134,15 +137,7 @@ public class CartServiceImpl implements CartService {
         order.setStatus(OrderStatus.PENDING);
 
         for (CartItem cartItem : items) {
-            Inventory inventory = inventoryRepository.findByProduct(cartItem.getProduct())
-                    .orElseThrow(() -> new IllegalStateException("Inventory missing for product " + cartItem.getProduct().getId()));
-
-            if (inventory.getAvailableQuantity() < cartItem.getQuantity()) {
-                throw new IllegalStateException("Insufficient inventory for product " + cartItem.getProduct().getId());
-            }
-
-            inventory.setAvailableQuantity(inventory.getAvailableQuantity() - cartItem.getQuantity());
-            inventoryRepository.save(inventory);
+            reserveInventoryWithRetry(cartItem.getProduct(), cartItem.getQuantity());
 
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(order);
@@ -170,6 +165,38 @@ public class CartServiceImpl implements CartService {
         cartRepository.save(cart);
 
         return new CheckoutResponse(order.getId(), payment.getId(), total, order.getStatus().name());
+    }
+
+    private void reserveInventoryWithRetry(Product product, Integer requestedQuantity) {
+        for (int attempt = 1; attempt <= INVENTORY_RETRY_MAX_ATTEMPTS; attempt++) {
+            Inventory inventory = inventoryRepository.findByProduct(product)
+                    .orElseThrow(() -> new IllegalStateException("Inventory missing for product " + product.getId()));
+
+            if (inventory.getAvailableQuantity() < requestedQuantity) {
+                throw new IllegalStateException("Insufficient inventory for product " + product.getId());
+            }
+
+            inventory.setAvailableQuantity(inventory.getAvailableQuantity() - requestedQuantity);
+            try {
+                inventoryRepository.saveAndFlush(inventory);
+                return;
+            } catch (ObjectOptimisticLockingFailureException ex) {
+                if (attempt == INVENTORY_RETRY_MAX_ATTEMPTS) {
+                    throw ex;
+                }
+                sleepWithJitter();
+            }
+        }
+    }
+
+    private void sleepWithJitter() {
+        long sleepMillis = ThreadLocalRandom.current().nextLong(20, 81);
+        try {
+            Thread.sleep(sleepMillis);
+        } catch (InterruptedException interruptedException) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted during inventory retry wait", interruptedException);
+        }
     }
 
     private User getUser(Long userId) {

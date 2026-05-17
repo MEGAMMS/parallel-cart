@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -63,6 +64,22 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT.value(),
                 "BusinessConflict",
                 ex.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiErrorResponse> handleOptimisticLockConflict(
+            ObjectOptimisticLockingFailureException ex,
+            HttpServletRequest request
+    ) {
+        ApiErrorResponse response = new ApiErrorResponse(
+                Instant.now(),
+                HttpStatus.CONFLICT.value(),
+                "OptimisticLockConflict",
+                "Concurrent update conflict. Retry operation.",
                 request.getRequestURI(),
                 Map.of()
         );
