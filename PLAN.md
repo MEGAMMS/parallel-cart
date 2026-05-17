@@ -31,6 +31,7 @@ Establish runnable backend foundation and project structure for high-concurrency
 ### Verification
 - Smoke test app boot.
 - Confirm Actuator health includes DB/Redis/Kafka.
+- Command reference: `docs/PHASE_VERIFICATION.md` (P0 section).
 
 ---
 
@@ -51,6 +52,7 @@ Implement minimum features required to exercise non-functional requirements.
 
 ### Verification
 - Integration test: create cart -> checkout -> order persisted.
+- Command reference: `docs/PHASE_VERIFICATION.md` (P1 section).
 
 ---
 
@@ -73,6 +75,7 @@ Guarantee correctness under concurrent access and preserve ACID behavior.
 ### Verification
 - Concurrency integration test with parallel checkout on same SKU.
 - Failure-path test verifies rollback.
+- Command reference: `docs/PHASE_VERIFICATION.md` (P2 section).
 
 ---
 
