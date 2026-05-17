@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P1-T1: Implement entities: `User`, `Product`, `Inventory`, `Cart`, `CartItem`, `Order`, `OrderItem`, `Payment`.
+- [ ] P1-T2: Implement APIs: products list/detail, cart add/update/remove, checkout.
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -40,7 +40,7 @@ Establish runnable backend foundation and project structure for high-concurrency
 Implement minimum features required to exercise non-functional requirements.
 
 ### Tasks
-- [ ] P1-T1: Implement entities: `User`, `Product`, `Inventory`, `Cart`, `CartItem`, `Order`, `OrderItem`, `Payment`.
+- [x] P1-T1: Implement entities: `User`, `Product`, `Inventory`, `Cart`, `CartItem`, `Order`, `OrderItem`, `Payment`.
 - [ ] P1-T2: Implement APIs: products list/detail, cart add/update/remove, checkout.
 - [ ] P1-T3: Seed sample data for load tests.
 - [ ] P1-T4: Add DTO validation and uniform error handling.
