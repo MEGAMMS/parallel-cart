@@ -53,3 +53,7 @@ app:
     max-publish-attempts: 5
     publisher:
       fixed-delay-ms: 2000
+  batch:
+    daily-sales:
+      cron: ${APP_BATCH_DAILY_SALES_CRON:0 10 0 * * *}
+      chunk-size: ${APP_BATCH_DAILY_SALES_CHUNK_SIZE:500}

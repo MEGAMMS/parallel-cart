@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P5-T1: Build daily sales aggregation batch job (chunk-based processing).
+- [ ] P5-T2: Add resumable progress markers/checkpointing.
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -142,7 +142,7 @@ Improve latency and stability via Redis and bounded execution resources.
 Implement daily sales batch job and simulate multi-instance traffic distribution.
 
 ### Tasks
-- [ ] P5-T1: Build daily sales aggregation batch job (chunk-based processing).
+- [x] P5-T1: Build daily sales aggregation batch job (chunk-based processing).
 - [ ] P5-T2: Add resumable progress markers/checkpointing.
 - [ ] P5-T3: Run 2+ app instances behind Nginx load balancer.
 - [ ] P5-T4: Document chosen distribution strategy and rationale.
