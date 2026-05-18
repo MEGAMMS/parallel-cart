@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P6-T6: Write final technical report with architecture + AOP explanation + evidence.
+- [x] Project complete: all planned phases/tasks finished.
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -168,7 +168,7 @@ Prove stability at required concurrency and show measurable optimization.
 - [x] P6-T3: Run stress test with >=100 concurrent users.
 - [x] P6-T4: Identify at least one bottleneck.
 - [x] P6-T5: Implement one optimization and compare before/after metrics.
-- [ ] P6-T6: Write final technical report with architecture + AOP explanation + evidence.
+- [x] P6-T6: Write final technical report with architecture + AOP explanation + evidence.
 
 ### Acceptance Criteria
 - System handles >=100 concurrent users without data loss/corruption.
