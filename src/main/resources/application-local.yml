@@ -41,7 +41,7 @@ app:
       pool-size: 2
   backpressure:
     checkout:
-      max-concurrent: 50
+      max-concurrent: ${APP_BACKPRESSURE_CHECKOUT_MAX_CONCURRENT:50}
   kafka:
     topics:
       order-created: order.created

@@ -1,6 +1,6 @@
-# Phase Verification Guide (P0, P1, P2, P3)
+# Phase Verification Guide (P0, P1, P2, P3, P4)
 
-This file gives runnable commands to verify completed work for phases P0-P3.
+This file gives runnable commands to verify completed work for phases P0-P4.
 
 ## Prerequisites
 
@@ -232,6 +232,63 @@ Expected:
 - prints outbox row before and after async publish
 - confirms invoice, notification, and published outbox rows
 - prints final delta summary for `outbox_events`, `invoices`, and `notification_logs`
+
+## P4 Verification — Caching and Resource Management
+
+### One-command verifier for all P4 tasks + benchmark
+
+```bash
+./scripts/verify_phase4.sh all
+```
+
+### P4-T1: Cache hot product reads in Redis with TTL
+
+```bash
+./scripts/verify_phase4.sh t1
+```
+
+What it verifies:
+- app runs with `SPRING_CACHE_TYPE=redis`
+- product endpoints are called to warm cache
+- Redis keys under pattern `products::*` are visible
+
+### P4-T2: Invalidate cache on inventory mutation
+
+```bash
+./scripts/verify_phase4.sh t2
+```
+
+What it verifies:
+- `products::all` and `products::id:1` are created after reads
+- checkout mutates inventory and triggers invalidation
+- key existence is checked again after checkout
+
+### P4-T3: Bounded thread pools and queue capacities
+
+```bash
+./scripts/verify_phase4.sh t3
+```
+
+What it verifies:
+- compile passes with resource config
+- configured limits are printed from:
+  - `src/main/resources/application-local.yml`
+  - `src/main/java/com/parallelcart/config/ResourceManagementConfig.java`
+
+### P4-T4: Backpressure/fail-fast behavior
+
+```bash
+./scripts/verify_phase4.sh t4
+```
+
+What it verifies:
+- controller test for saturation returns `503`:
+  - `./mvnw -Dtest=CartControllerSaturationTest test`
+- runtime saturation attempt:
+  - runs app with `APP_BACKPRESSURE_CHECKOUT_MAX_CONCURRENT=1`
+  - sends concurrent checkout requests
+  - prints HTTP code counts (look for `503`)
+
 
 ## Cleanup
 
