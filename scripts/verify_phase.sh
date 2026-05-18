@@ -91,21 +91,24 @@ print_http() {
   local url="$3"
   local body="${4:-}"
   local tmp
+  local curl_meta
+  local code
+  local time_total
   tmp=$(mktemp)
 
   echo
   echo "[$label]"
   if [[ -n "$body" ]]; then
     echo "$ curl -sS -X $method '$url' -H 'Content-Type: application/json' -d '$body'"
-    local code
-    code=$(curl -sS -o "$tmp" -w "%{http_code}" -X "$method" "$url" -H "Content-Type: application/json" -d "$body" || true)
-    echo "HTTP: $code"
+    curl_meta=$(curl -sS -o "$tmp" -w "%{http_code} %{time_total}" -X "$method" "$url" -H "Content-Type: application/json" -d "$body" || true)
   else
     echo "$ curl -sS -X $method '$url'"
-    local code
-    code=$(curl -sS -o "$tmp" -w "%{http_code}" -X "$method" "$url" || true)
-    echo "HTTP: $code"
+    curl_meta=$(curl -sS -o "$tmp" -w "%{http_code} %{time_total}" -X "$method" "$url" || true)
   fi
+  code="${curl_meta%% *}"
+  time_total="${curl_meta##* }"
+  echo "HTTP: $code"
+  echo "time_total_seconds: $time_total"
 
   echo "Response:"
   pretty_json "$tmp"
@@ -198,8 +201,11 @@ case "$phase" in
     echo
     echo "[checkout]"
     echo "$ curl -sS -X POST 'http://localhost:8080/api/carts/${USER_ID}/checkout' -H 'Content-Type: application/json' -d '{\"idempotencyKey\":\"${IDEM_KEY}\"}'"
-    checkout_code=$(curl -sS -o "$checkout_file" -w "%{http_code}" -X POST "http://localhost:8080/api/carts/${USER_ID}/checkout" -H "Content-Type: application/json" -d "{\"idempotencyKey\":\"${IDEM_KEY}\"}" || true)
+    checkout_meta=$(curl -sS -o "$checkout_file" -w "%{http_code} %{time_total}" -X POST "http://localhost:8080/api/carts/${USER_ID}/checkout" -H "Content-Type: application/json" -d "{\"idempotencyKey\":\"${IDEM_KEY}\"}" || true)
+    checkout_code="${checkout_meta%% *}"
+    checkout_time="${checkout_meta##* }"
     echo "HTTP: $checkout_code"
+    echo "time_total_seconds: $checkout_time"
     echo "Response:"
     pretty_json "$checkout_file"
     if [[ "$checkout_code" -ge 400 || "$checkout_code" -lt 200 ]]; then

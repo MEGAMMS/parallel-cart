@@ -164,6 +164,19 @@ The `local` Spring profile seeds data automatically on startup via `DataSeeder`:
 ./mvnw test
 ```
 
+### Run FT1 (Requirements 1-5) verification scripts
+
+```bash
+./scripts/ft1/run-concurrency-check.sh
+./scripts/ft1/run-capacity-check.sh
+./scripts/ft1/run-async-queue-check.sh
+./scripts/ft1/run-batch-check.sh
+./scripts/ft1/run-load-distribution-check.sh
+```
+
+Combined report target:
+- `docs/FT1_VERIFICATION_RESULTS.md`
+
 ### Run checkout integrity tests only
 
 ```bash
