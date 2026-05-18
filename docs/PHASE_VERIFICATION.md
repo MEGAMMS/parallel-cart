@@ -346,3 +346,38 @@ for i in {1..10}; do
   curl -s -D - http://localhost:8088/api/products -o /dev/null | rg "X-Upstream-Addr"
 done
 ```
+
+## P6 Verification — Observability and Benchmarking
+
+### P6-T1: AOP timing around critical operations
+
+Static check:
+
+```bash
+rg -n "perf_timing|operation=|ProductServiceImpl|CartServiceImpl.checkout|InventoryRepository.saveAndFlush" src/main/java/com/parallelcart/observability/PerformanceTimingAspect.java
+```
+
+Runtime check:
+
+```bash
+docker compose up -d --build
+curl -s http://localhost:8080/api/products >/dev/null
+curl -s http://localhost:8080/api/products/1 >/dev/null
+
+docker compose logs app | rg "perf_timing"
+```
+
+Expected:
+- log lines include `operation=product_read`
+- on checkout path, logs include `operation=checkout` and `operation=inventory_update`
+
+### P6-T2: Metrics queries and snapshot
+
+Run snapshot:
+
+```bash
+./scripts/metrics_snapshot_p6.sh
+```
+
+Detailed query reference:
+- `docs/p6-metrics-queries.md`
