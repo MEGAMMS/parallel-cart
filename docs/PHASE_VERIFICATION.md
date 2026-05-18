@@ -321,6 +321,12 @@ docker compose down -v
 
 ## P5 Verification — Batch + Load Distribution
 
+### One-command verifier for all P5 tasks
+
+```bash
+./scripts/verify_phase5.sh all
+```
+
 ### P5-T3: Run 2 app instances behind Nginx
 
 ```bash
