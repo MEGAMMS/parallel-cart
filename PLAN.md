@@ -1,13 +1,43 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P4-T4: Add backpressure/fail-fast behavior when system saturated.
+- [ ] FT1-T1: Add race-condition proof test (parallel checkout on same SKU) and capture evidence.
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
 - A task is done only when its acceptance criteria and tests pass.
 - Update `Current Next Step` immediately after finishing any task.
 - Keep evidence links/paths under each phase (`reports/`, `tests/`, logs snapshots).
+
+---
+
+## First Thursday Scope (Requirements 1-5) — Focus Plan
+
+### Objective
+Close all gaps for requirements 1-5 with implementation + proof artifacts.
+
+### Current Status Snapshot
+- Requirement 1 (Concurrent Access & Data Integrity): implemented, but proof test artifact still missing.
+- Requirement 2 (Resource Management & Capacity Control): mostly implemented, saturation fail-fast path still missing.
+- Requirement 3 (Asynchronous Queues): implemented end-to-end.
+- Requirement 4 (Batch Processing): missing required daily-sales chunk job.
+- Requirement 5 (Load Distribution): missing multi-instance + load balancer simulation and evidence.
+
+### Execution Order (Do Not Reorder)
+- [ ] FT1-T1: Add deterministic parallel race test (same inventory row, concurrent checkout attempts) and save results under `reports/interviews/first-thursday/`.
+- [ ] FT1-T2: Add saturation behavior for bounded resources (fail-fast/backpressure) and expose expected API behavior under load.
+- [ ] FT1-T3: Implement daily sales background batch using chunk processing.
+- [ ] FT1-T4: Add resumable checkpoint/progress marker for the batch job.
+- [ ] FT1-T5: Run 2+ app instances behind Nginx and verify request distribution.
+- [ ] FT1-T6: Document and justify load distribution strategy (round-robin vs alternatives) with logs/screenshots.
+- [ ] FT1-T7: Add one-command verification flow for requirements 1-5.
+
+### Acceptance Criteria (First Thursday Scope)
+- Req 1: Evidence shows no oversell/negative inventory under concurrent checkout race.
+- Req 2: System behavior remains bounded under saturation with explicit rejection/backpressure behavior.
+- Req 3: Checkout triggers async invoice + notification reliably (including retry/DLQ path).
+- Req 4: Daily sales batch runs in chunks and completes without memory spikes.
+- Req 5: Requests are distributed across multiple app instances with clear strategy justification.
 
 ---
 
