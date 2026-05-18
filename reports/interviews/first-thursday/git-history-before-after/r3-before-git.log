@@ -1,0 +1,21 @@
+===== FT1 Req 3: Asynchronous Queues =====
+BEFORE COMMIT: 2f9f5cb Add .dockerignore to reduce Docker build context
+BEFORE RESULT:
+- test: GitHistoryR3BeforeTest
+- mvn_exit_code: 0
+- GitHistory R3 before summary: checkoutLatencyMs=203, outboxTable=0, invoiceTable=0, notificationTable=0
+
+AFTER COMMIT: 59b24a8 Add   before/after verification scripts, tests, and report
+AFTER RESULT:
+- script: scripts/verify_phase.sh p3 (captured via PTY)
+- script_exit_code: 0
+- checkout_time_total_seconds: 0.059039
+- outbox_events delta: 0 -> 1
+- invoices delta: 0 -> 1
+- notification_logs delta: 0 -> 1
+- consumer_evidence_invoice: [ok] invoice row count=1
+- consumer_evidence_notification: [ok] notification row count=1
+- consumer_evidence_outbox_published: [ok] published outbox row count=1
+
+RESULT: PASS
+EVIDENCE LOG: reports/interviews/first-thursday/git-history-before-after/r3-before-git.log

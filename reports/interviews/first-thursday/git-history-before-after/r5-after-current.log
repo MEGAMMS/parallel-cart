@@ -1,0 +1,17 @@
+===== FT1 Req 5: Load Distribution =====
+BEFORE COMMIT: 6cfa21d Checking the requirements and adjusting the plan according to the remaining requirements.
+BEFORE RESULT:
+- GitHistory R5 before summary: requests=40, success=40, failed=0, avgLatencyMs=14, uniqueInstances=1, distribution={single-instance-no-header=40}
+
+AFTER COMMIT: 59b24a8 Add   before/after verification scripts, tests, and report
+AFTER RESULT:
+- requests=40
+- success=40
+- failed=0
+- success_rate=100.00%
+- avg_latency_seconds=0.0072
+- distribution=instance_count[app-1]=18;instance_count[app-2]=22
+- unique_instances=2
+
+RESULT: PASS
+EVIDENCE LOG: reports/interviews/first-thursday/git-history-before-after/r5-after-current.log

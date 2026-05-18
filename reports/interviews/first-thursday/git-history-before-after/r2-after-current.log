@@ -1,0 +1,11 @@
+===== FT1 Req 2: Resource Management & Capacity Control =====
+BEFORE COMMIT: 6cfa21d Checking the requirements and adjusting the plan according to the remaining requirements.
+BEFORE RESULT:
+- GitHistory R2 before summary: buyers=24, status200=24, status429=0, otherStatus=0, transportFailures=0
+
+AFTER COMMIT: 59b24a8 Add   before/after verification scripts, tests, and report
+AFTER RESULT:
+- Capacity HTTP summary: buyers=24, status200=1, status429=23, otherStatus=0
+
+RESULT: PASS
+EVIDENCE LOG: reports/interviews/first-thursday/git-history-before-after/r2-after-current.log

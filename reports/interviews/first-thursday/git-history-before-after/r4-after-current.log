@@ -1,0 +1,13 @@
+===== FT1 Req 4: Batch Processing =====
+BEFORE COMMIT: 6cfa21d Checking the requirements and adjusting the plan according to the remaining requirements.
+BEFORE RESULT:
+- GitHistory R4 before summary: records=23, chunkSize=ALL, checkpoint=NOT_IMPLEMENTED, resume=NOT_IMPLEMENTED, durationMs=5, total=299.00
+
+AFTER COMMIT: 59b24a8 Add   before/after verification scripts, tests, and report
+AFTER RESULT:
+- Batch baseline summary: mode=single-pass, records=23, chunkSize=ALL, checkpoint=NONE, durationMs=19
+- Batch chunked summary: mode=chunked-resume, records=23, chunkSize=5, firstRunCompleted=false, firstRunProcessed=5, finalCheckpoint=COMPLETED, durationMs=28
+- DailySalesBatchServiceTest: tests=2, failures=0, errors=0
+
+RESULT: PASS
+EVIDENCE LOG: reports/interviews/first-thursday/git-history-before-after/r4-after-current.log

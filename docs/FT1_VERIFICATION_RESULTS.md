@@ -13,6 +13,10 @@ Verified the first five non-functional requirements from `parallel-programming-p
 4. Batch Processing
 5. Load Distribution
 
+## Evidence Tracks
+- Controlled baseline evidence: test-only baselines in this branch (`UnsafeInventoryBaselineRaceTest`, `CheckoutCapacityBypassBaselineTest`, `AsyncQueueLatencyBaselineTest`, `DailySalesBatchBeforeAfterComparisonTest`) and FT1 scripts under `scripts/ft1/`.
+- Git history based evidence: real older-commit comparisons captured in `reports/interviews/first-thursday/git-history-before-after/` and documented in `docs/FT1_GIT_HISTORY_VERIFICATION.md`.
+
 ## Overall Status
 
 | Requirement | Status | Notes |
@@ -174,12 +178,39 @@ Req 4 is satisfied. Chunked processing and resumable checkpoint progression are 
 | Success | 40 | 40 |
 | Failed | 0 | 0 |
 | Success rate | 100% | 100% |
-| Average latency | `0.0080s` | `0.0107s` |
+| Average latency | `0.0080s` | `0.0072s` |
 | Instance distribution | one instance only (`cb79b161c280=40`) | `app-1=18`, `app-2=22` |
 | Unique instances observed | 1 | 2 |
 
 ### Conclusion
 Req 5 is satisfied. Nginx round-robin distributes requests across both app instances.
+
+---
+
+## Git History Based Before/After Evidence
+
+After commit (current `tariq`): `59b24a8`
+
+| Requirement | Before commit | After commit | Before summary | After summary | Result | Comparison type |
+|---|---|---|---|---|---|---|
+| Req1 Concurrent Access & Data Integrity | `08b7be5` | `59b24a8` | `initialStock=100, buyers=20, successes=2, failures=18, finalInventory=98, oversold=false` | `initialStock=100, buyers=20, successes=5, failures=15, finalInventory=95, oversold=false` | PASS | Real old-commit comparison (limitation: old commit already had optimistic versioning, so oversell not reproduced) |
+| Req2 Resource Management & Capacity Control | `6cfa21d` | `59b24a8` | `buyers=24, status200=24, status429=0, otherStatus=0` | `buyers=24, status200=1, status429=23, otherStatus=0` | PASS | Fully real old-commit comparison |
+| Req3 Asynchronous Queues | `2f9f5cb` | `59b24a8` | `checkoutLatencyMs=203, outboxTable=0, invoiceTable=0, notificationTable=0` | `checkout_time_total_seconds=0.059039, outbox/invoice/notification deltas: 0->1` | PASS | Fully real old-commit comparison |
+| Req4 Batch Processing | `6cfa21d` | `59b24a8` | `records=23, chunkSize=ALL, checkpoint=NOT_IMPLEMENTED, resume=NOT_IMPLEMENTED` | `records=23, chunkSize=5, firstRunCompleted=false, finalCheckpoint=COMPLETED` | PASS | Fully real old-commit comparison |
+| Req5 Load Distribution | `6cfa21d` | `59b24a8` | `requests=40, success=40, failed=0, uniqueInstances=1` | `requests=40, success=40, failed=0, unique_instances=2, app-1=18/app-2=22` | PASS | Fully real old-commit comparison |
+
+Git history evidence logs:
+
+- `reports/interviews/first-thursday/git-history-before-after/r1-before-git.log`
+- `reports/interviews/first-thursday/git-history-before-after/r1-after-current.log`
+- `reports/interviews/first-thursday/git-history-before-after/r2-before-git.log`
+- `reports/interviews/first-thursday/git-history-before-after/r2-after-current.log`
+- `reports/interviews/first-thursday/git-history-before-after/r3-before-git.log`
+- `reports/interviews/first-thursday/git-history-before-after/r3-after-current.log`
+- `reports/interviews/first-thursday/git-history-before-after/r4-before-git.log`
+- `reports/interviews/first-thursday/git-history-before-after/r4-after-current.log`
+- `reports/interviews/first-thursday/git-history-before-after/r5-before-git.log`
+- `reports/interviews/first-thursday/git-history-before-after/r5-after-current.log`
 
 ---
 

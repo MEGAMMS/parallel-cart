@@ -1,0 +1,15 @@
+===== FT1 Req 1: Concurrent Access & Data Integrity =====
+BEFORE COMMIT: 08b7be5 Implement core APIs, seed data, and validation handling (P1)
+BEFORE RESULT:
+- test: GitHistoryR1BeforeTest
+- mvn_exit_code: 0
+- GitHistory R1 before summary: initialStock=100, buyers=20, successes=2, failures=18, finalInventory=98, oversold=false
+
+AFTER COMMIT: 59b24a8 Add   before/after verification scripts, tests, and report
+AFTER RESULT:
+- test: GitHistoryR1AfterTest
+- mvn_exit_code: 0
+- GitHistory R1 after summary: initialStock=100, buyers=20, successes=5, failures=15, finalInventory=95, oversold=false
+
+RESULT: PASS
+EVIDENCE LOG: reports/interviews/first-thursday/git-history-before-after/r1-before-git.log

@@ -1,0 +1,13 @@
+userId,productId,quantity,idempotencyKey,expectedScenario
+2,1,1,concurrency-jmeter-001,same_product_inventory_contention
+3,1,1,concurrency-jmeter-002,same_product_inventory_contention
+4,1,1,concurrency-jmeter-003,same_product_inventory_contention
+5,1,1,concurrency-jmeter-004,same_product_inventory_contention
+6,1,1,concurrency-jmeter-005,same_product_inventory_contention
+7,1,1,concurrency-jmeter-006,same_product_inventory_contention
+8,1,1,concurrency-jmeter-007,same_product_inventory_contention
+9,1,1,concurrency-jmeter-008,same_product_inventory_contention
+10,1,1,concurrency-jmeter-009,same_product_inventory_contention
+11,1,1,concurrency-jmeter-010,same_product_inventory_contention
+12,1,1,concurrency-jmeter-011,same_product_inventory_contention
+13,1,1,concurrency-jmeter-012,same_product_inventory_contention
