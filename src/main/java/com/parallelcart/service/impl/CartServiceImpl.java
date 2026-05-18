@@ -25,6 +25,7 @@ import com.parallelcart.infra.repository.ProductRepository;
 import com.parallelcart.infra.repository.UserRepository;
 import com.parallelcart.service.CacheInvalidationService;
 import com.parallelcart.service.CartService;
+import com.parallelcart.service.CheckoutCapacityGuard;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -49,6 +50,7 @@ public class CartServiceImpl implements CartService {
     private final PaymentRepository paymentRepository;
     private final OutboxEventService outboxEventService;
     private final CacheInvalidationService cacheInvalidationService;
+    private final CheckoutCapacityGuard checkoutCapacityGuard;
 
     public CartServiceImpl(
             UserRepository userRepository,
@@ -59,7 +61,8 @@ public class CartServiceImpl implements CartService {
             OrderRepository orderRepository,
             PaymentRepository paymentRepository,
             OutboxEventService outboxEventService,
-            CacheInvalidationService cacheInvalidationService
+            CacheInvalidationService cacheInvalidationService,
+            CheckoutCapacityGuard checkoutCapacityGuard
     ) {
         this.userRepository = userRepository;
         this.productRepository = productRepository;
@@ -70,6 +73,7 @@ public class CartServiceImpl implements CartService {
         this.paymentRepository = paymentRepository;
         this.outboxEventService = outboxEventService;
         this.cacheInvalidationService = cacheInvalidationService;
+        this.checkoutCapacityGuard = checkoutCapacityGuard;
     }
 
     @Override
@@ -134,6 +138,10 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public CheckoutResponse checkout(Long userId, String idempotencyKey) {
+        return checkoutCapacityGuard.runWithPermit(() -> doCheckout(userId, idempotencyKey));
+    }
+
+    private CheckoutResponse doCheckout(Long userId, String idempotencyKey) {
         User user = getUser(userId);
 
         Order existingOrder = orderRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey).orElse(null);

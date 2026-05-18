@@ -28,6 +28,14 @@ spring:
       concurrency: 2
 
 app:
+  checkout:
+    max-concurrent: 8
+  batch:
+    daily-sales:
+      chunk-size: 50
+      cron: "0 0 1 * * *"
+      zone-id: "Asia/Damascus"
+      default-offset-days: 1
   cache:
     product:
       ttl-seconds: 60

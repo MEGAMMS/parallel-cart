@@ -1,6 +1,7 @@
 package com.parallelcart.api.controller;
 
 import com.parallelcart.api.dto.ApiErrorResponse;
+import com.parallelcart.service.CheckoutCapacityExceededException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.HashMap;
@@ -68,6 +69,22 @@ public class GlobalExceptionHandler {
                 Map.of()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(CheckoutCapacityExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleCapacityExceeded(
+            CheckoutCapacityExceededException ex,
+            HttpServletRequest request
+    ) {
+        ApiErrorResponse response = new ApiErrorResponse(
+                Instant.now(),
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                "CapacityExceeded",
+                ex.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(response);
     }
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)

@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] FT1-T1: Add race-condition proof test (parallel checkout on same SKU) and capture evidence.
+- [ ] P6-T1: Add AOP timing around critical operations (product read, checkout, inventory update).
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -17,20 +17,20 @@
 Close all gaps for requirements 1-5 with implementation + proof artifacts.
 
 ### Current Status Snapshot
-- Requirement 1 (Concurrent Access & Data Integrity): implemented, but proof test artifact still missing.
-- Requirement 2 (Resource Management & Capacity Control): mostly implemented, saturation fail-fast path still missing.
+- Requirement 1 (Concurrent Access & Data Integrity): implemented, with race-condition proof artifact in `reports/interviews/first-thursday/FT1-T1_RACE_PROOF.md`.
+- Requirement 2 (Resource Management & Capacity Control): implemented with bounded pools + fail-fast checkout capacity guard, with proof artifact in `reports/interviews/first-thursday/FT1-T2_CAPACITY_CONTROL.md`.
 - Requirement 3 (Asynchronous Queues): implemented end-to-end.
-- Requirement 4 (Batch Processing): missing required daily-sales chunk job.
-- Requirement 5 (Load Distribution): missing multi-instance + load balancer simulation and evidence.
+- Requirement 4 (Batch Processing): implemented with chunked daily-sales job + checkpoint resume.
+- Requirement 5 (Load Distribution): implemented with 2 app instances + Nginx round-robin and verification evidence.
 
 ### Execution Order (Do Not Reorder)
-- [ ] FT1-T1: Add deterministic parallel race test (same inventory row, concurrent checkout attempts) and save results under `reports/interviews/first-thursday/`.
-- [ ] FT1-T2: Add saturation behavior for bounded resources (fail-fast/backpressure) and expose expected API behavior under load.
-- [ ] FT1-T3: Implement daily sales background batch using chunk processing.
-- [ ] FT1-T4: Add resumable checkpoint/progress marker for the batch job.
-- [ ] FT1-T5: Run 2+ app instances behind Nginx and verify request distribution.
-- [ ] FT1-T6: Document and justify load distribution strategy (round-robin vs alternatives) with logs/screenshots.
-- [ ] FT1-T7: Add one-command verification flow for requirements 1-5.
+- [x] FT1-T1: Add deterministic parallel race test (same inventory row, concurrent checkout attempts) and save results under `reports/interviews/first-thursday/`.
+- [x] FT1-T2: Add saturation behavior for bounded resources (fail-fast/backpressure) and expose expected API behavior under load.
+- [x] FT1-T3: Implement daily sales background batch using chunk processing.
+- [x] FT1-T4: Add resumable checkpoint/progress marker for the batch job.
+- [x] FT1-T5: Run 2+ app instances behind Nginx and verify request distribution.
+- [x] FT1-T6: Document and justify load distribution strategy (round-robin vs alternatives) with logs/screenshots.
+- [x] FT1-T7: Add one-command verification flow for requirements 1-5.
 
 ### Acceptance Criteria (First Thursday Scope)
 - Req 1: Evidence shows no oversell/negative inventory under concurrent checkout race.
@@ -154,7 +154,7 @@ Improve latency and stability via Redis and bounded execution resources.
 - [x] P4-T1: Cache hot product reads in Redis with TTL.
 - [x] P4-T2: Invalidate/update cache on product/inventory mutation.
 - [x] P4-T3: Configure bounded thread pools and queue capacities.
-- [ ] P4-T4: Add backpressure/fail-fast behavior when system saturated.
+- [x] P4-T4: Add backpressure/fail-fast behavior when system saturated.
 
 ### Acceptance Criteria
 - Read latency improves measurably for hot products.
@@ -172,10 +172,10 @@ Improve latency and stability via Redis and bounded execution resources.
 Implement daily sales batch job and simulate multi-instance traffic distribution.
 
 ### Tasks
-- [ ] P5-T1: Build daily sales aggregation batch job (chunk-based processing).
-- [ ] P5-T2: Add resumable progress markers/checkpointing.
-- [ ] P5-T3: Run 2+ app instances behind Nginx load balancer.
-- [ ] P5-T4: Document chosen distribution strategy and rationale.
+- [x] P5-T1: Build daily sales aggregation batch job (chunk-based processing).
+- [x] P5-T2: Add resumable progress markers/checkpointing.
+- [x] P5-T3: Run 2+ app instances behind Nginx load balancer.
+- [x] P5-T4: Document chosen distribution strategy and rationale.
 
 ### Acceptance Criteria
 - Batch completes on large dataset without memory spikes.

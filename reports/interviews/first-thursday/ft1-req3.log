@@ -1,0 +1,213 @@
+== P3 verify ==
+$ docker compose down -v
+$ docker compose up -d --build
+#1 [internal] load local bake definitions
+#1 reading from stdin 518B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 608B done
+#2 DONE 0.0s
+
+#3 resolve image config for docker-image://docker.io/docker/dockerfile:1.7
+#3 DONE 2.2s
+
+#4 docker-image://docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
+#4 CACHED
+
+#5 [internal] load metadata for docker.io/library/eclipse-temurin:21-jdk
+#5 ...
+
+#6 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre
+#6 DONE 1.3s
+
+#5 [internal] load metadata for docker.io/library/eclipse-temurin:21-jdk
+#5 DONE 1.3s
+
+#7 [internal] load .dockerignore
+#7 transferring context: 245B done
+#7 DONE 0.0s
+
+#8 [build 1/9] FROM docker.io/library/eclipse-temurin:21-jdk@sha256:b9142586f9712700c6c9e07adcedfb18608b1a3a056e4001423a3354adfa9d80
+#8 DONE 0.0s
+
+#9 [runtime 1/3] FROM docker.io/library/eclipse-temurin:21-jre@sha256:010e0a06bd4e0184dec58626afb3ba727b42c56c91b977e2f0a9e0837e0fa3fb
+#9 DONE 0.0s
+
+#10 [internal] load build context
+#10 transferring context: 10.92kB 0.0s done
+#10 DONE 0.0s
+
+#11 [build 3/9] COPY mvnw mvnw
+#11 CACHED
+
+#12 [build 6/9] RUN chmod +x mvnw
+#12 CACHED
+
+#13 [build 5/9] COPY pom.xml pom.xml
+#13 CACHED
+
+#14 [build 2/9] WORKDIR /workspace
+#14 CACHED
+
+#15 [build 4/9] COPY .mvn .mvn
+#15 CACHED
+
+#16 [build 7/9] RUN --mount=type=cache,target=/root/.m2 ./mvnw -DskipTests dependency:go-offline
+#16 CACHED
+
+#17 [build 8/9] COPY src src
+#17 DONE 0.1s
+
+#18 [build 9/9] RUN --mount=type=cache,target=/root/.m2 ./mvnw -DskipTests package
+#18 1.540 [INFO] Scanning for projects...
+#18 1.687 [INFO] 
+#18 1.687 [INFO] -------------------< com.parallelcart:parallel-cart >-------------------
+#18 1.687 [INFO] Building parallel-cart 0.0.1-SNAPSHOT
+#18 1.687 [INFO]   from pom.xml
+#18 1.687 [INFO] --------------------------------[ jar ]---------------------------------
+#18 2.108 [INFO] 
+#18 2.108 [INFO] --- resources:3.3.1:resources (default-resources) @ parallel-cart ---
+#18 2.214 [INFO] Copying 3 resources from src/main/resources to target/classes
+#18 2.226 [INFO] Copying 0 resource from src/main/resources to target/classes
+#18 2.227 [INFO] 
+#18 2.227 [INFO] --- compiler:3.14.1:compile (default-compile) @ parallel-cart ---
+#18 2.319 [INFO] Recompiling the module because of changed source code.
+#18 2.325 [INFO] Compiling 72 source files with javac [debug parameters release 21] to target/classes
+#18 3.257 [INFO] 
+#18 3.257 [INFO] --- resources:3.3.1:testResources (default-testResources) @ parallel-cart ---
+#18 3.260 [INFO] skip non existing resourceDirectory /workspace/src/test/resources
+#18 3.260 [INFO] 
+#18 3.260 [INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ parallel-cart ---
+#18 3.265 [INFO] Recompiling the module because of changed dependency.
+#18 3.265 [INFO] Compiling 6 source files with javac [debug parameters release 21] to target/test-classes
+#18 3.599 [WARNING] /workspace/src/test/java/com/parallelcart/service/impl/ProductServiceCachingTest.java:[46,6] org.springframework.boot.test.mock.mockito.MockBean in org.springframework.boot.test.mock.mockito has been deprecated and marked for removal
+#18 3.599 [INFO] 
+#18 3.599 [INFO] --- surefire:3.5.5:test (default-test) @ parallel-cart ---
+#18 3.676 [INFO] Tests are skipped.
+#18 3.677 [INFO] 
+#18 3.677 [INFO] --- jar:3.4.2:jar (default-jar) @ parallel-cart ---
+#18 3.834 [INFO] Building jar: /workspace/target/parallel-cart-0.0.1-SNAPSHOT.jar
+#18 3.877 [INFO] 
+#18 3.877 [INFO] --- spring-boot:3.5.14:repackage (repackage) @ parallel-cart ---
+#18 4.218 [INFO] Replacing main artifact /workspace/target/parallel-cart-0.0.1-SNAPSHOT.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+#18 4.218 [INFO] The original artifact has been renamed to /workspace/target/parallel-cart-0.0.1-SNAPSHOT.jar.original
+#18 4.218 [INFO] ------------------------------------------------------------------------
+#18 4.218 [INFO] BUILD SUCCESS
+#18 4.218 [INFO] ------------------------------------------------------------------------
+#18 4.219 [INFO] Total time:  2.693 s
+#18 4.219 [INFO] Finished at: 2026-05-18T15:06:53Z
+#18 4.219 [INFO] ------------------------------------------------------------------------
+#18 DONE 4.8s
+
+#19 [runtime 2/3] WORKDIR /app
+#19 CACHED
+
+#20 [runtime 3/3] COPY --from=build /workspace/target/parallel-cart-0.0.1-SNAPSHOT.jar app.jar
+#20 DONE 0.4s
+
+#21 exporting to image
+#21 exporting layers
+#21 exporting layers 0.2s done
+#21 writing image sha256:eaab273280d077a7f97f3a94b448b6a3e9f928c2b3c71ebabcdd7af45c34a4f7 done
+#21 naming to docker.io/library/parallel-cart-app done
+#21 DONE 0.2s
+
+#22 resolving provenance for metadata file
+#22 DONE 0.0s
+$ for i in {1..120}; do curl -sf http://localhost:8080/actuator/health >/dev/null && break; sleep 1; done
+[ok] app reachable
+
+[phase3-initial-state]
+outbox_events before checkout: 0
+invoices before checkout: 0
+notification_logs before checkout: 0
+
+[cart-add]
+$ curl -sS -X POST 'http://localhost:8080/api/carts/2/items' -H 'Content-Type: application/json' -d '{"productId":1,"quantity":1}'
+HTTP: 200
+Response:
+{
+  "cartId": 1,
+  "userId": 2,
+  "items": [
+    {
+      "itemId": 1,
+      "productId": 1,
+      "productName": "Sample Product 1",
+      "quantity": 1
+    }
+  ]
+}
+
+[checkout]
+$ curl -sS -X POST 'http://localhost:8080/api/carts/2/checkout' -H 'Content-Type: application/json' -d '{"idempotencyKey":"verify-phase-p3-1779116839"}'
+HTTP: 200
+Response:
+{
+  "orderId": 1,
+  "paymentId": 1,
+  "totalAmount": 11.00,
+  "status": "PAID"
+}
+Extracted orderId=1
+
+[order-payment-row]
+$ docker compose exec -T postgres psql -U parallel_cart -d parallel_cart -c "select o.id as order_id, o.status as order_status, o.total_amount, p.id as payment_id, p.status as payment_status from orders o join payments p on p.order_id = o.id where o.id = 1;"
+ order_id | order_status | total_amount | payment_id | payment_status 
+----------+--------------+--------------+------------+----------------
+        1 | PAID         |        11.00 |          1 | CAPTURED
+(1 row)
+
+
+[outbox-row-initial]
+$ docker compose exec -T postgres psql -U parallel_cart -d parallel_cart -c "select id, event_type, aggregate_id, status, publish_attempts, published_at, left(coalesce(last_error, ''), 120) as last_error from outbox_events where aggregate_id = 1 order by id desc;"
+ id |  event_type   | aggregate_id | status  | publish_attempts | published_at | last_error 
+----+---------------+--------------+---------+------------------+--------------+------------
+  1 | ORDER_CREATED |            1 | PENDING |                0 |              | 
+(1 row)
+
+$ wait_for 'invoice row' (up to 120s)
+[ok] invoice row count=1
+$ wait_for 'notification row' (up to 120s)
+[ok] notification row count=1
+$ wait_for 'published outbox row' (up to 120s)
+[ok] published outbox row count=1
+
+[invoice-row]
+$ docker compose exec -T postgres psql -U parallel_cart -d parallel_cart -c "select id, order_id, user_id, payment_id, total_amount, order_status, issued_at from invoices where order_id = 1 order by id desc;"
+ id | order_id | user_id | payment_id | total_amount | order_status |          issued_at           
+----+----------+---------+------------+--------------+--------------+------------------------------
+  1 |        1 |       2 |          1 |        11.00 | PAID         | 2026-05-18 15:07:22.18299+00
+(1 row)
+
+
+[notification-row]
+$ docker compose exec -T postgres psql -U parallel_cart -d parallel_cart -c "select id, order_id, user_id, channel, left(message, 120) as message, sent_at from notification_logs where order_id = 1 order by id desc;"
+ id | order_id | user_id | channel |             message             |           sent_at            
+----+----------+---------+---------+---------------------------------+------------------------------
+  1 |        1 |       2 | EMAIL   | Order 1 confirmed. Total: 11.00 | 2026-05-18 15:07:22.16742+00
+(1 row)
+
+
+[outbox-row-final]
+$ docker compose exec -T postgres psql -U parallel_cart -d parallel_cart -c "select id, event_type, aggregate_id, status, publish_attempts, published_at, left(coalesce(last_error, ''), 120) as last_error from outbox_events where aggregate_id = 1 order by id desc;"
+ id |  event_type   | aggregate_id |  status   | publish_attempts |         published_at          | last_error 
+----+---------------+--------------+-----------+------------------+-------------------------------+------------
+  1 | ORDER_CREATED |            1 | PUBLISHED |                1 | 2026-05-18 15:07:22.016711+00 | 
+(1 row)
+
+
+[outbox-latest-5]
+$ docker compose exec -T postgres psql -U parallel_cart -d parallel_cart -c "select id, event_type, aggregate_id, status, publish_attempts, published_at from outbox_events order by id desc limit 5;"
+ id |  event_type   | aggregate_id |  status   | publish_attempts |         published_at          
+----+---------------+--------------+-----------+------------------+-------------------------------
+  1 | ORDER_CREATED |            1 | PUBLISHED |                1 | 2026-05-18 15:07:22.016711+00
+(1 row)
+
+
+[phase3-summary]
+orderId=1
+outbox_events delta: 0 -> 1
+invoices delta: 0 -> 1
+notification_logs delta: 0 -> 1
