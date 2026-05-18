@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P6-T4: Identify at least one bottleneck.
+- [ ] P6-T6: Write final technical report with architecture + AOP explanation + evidence.
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -166,8 +166,8 @@ Prove stability at required concurrency and show measurable optimization.
 - [x] P6-T1: Add AOP timing around critical operations (product read, checkout, inventory update).
 - [x] P6-T2: Add metrics dashboards/queries (latency p50/p95, throughput, error rate, consumer lag).
 - [x] P6-T3: Run stress test with >=100 concurrent users.
-- [ ] P6-T4: Identify at least one bottleneck.
-- [ ] P6-T5: Implement one optimization and compare before/after metrics.
+- [x] P6-T4: Identify at least one bottleneck.
+- [x] P6-T5: Implement one optimization and compare before/after metrics.
 - [ ] P6-T6: Write final technical report with architecture + AOP explanation + evidence.
 
 ### Acceptance Criteria

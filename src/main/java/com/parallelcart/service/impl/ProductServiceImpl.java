@@ -1,7 +1,6 @@
 package com.parallelcart.service.impl;
 
 import com.parallelcart.api.dto.ProductResponse;
-import com.parallelcart.domain.model.Product;
 import com.parallelcart.infra.repository.ProductRepository;
 import com.parallelcart.service.ProductService;
 import java.util.List;
@@ -20,25 +19,13 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Cacheable(cacheNames = "products", key = "'all'")
     public List<ProductResponse> listProducts() {
-        return productRepository.findAll().stream().map(this::toResponse).toList();
+        return productRepository.findAllResponses();
     }
 
     @Override
     @Cacheable(cacheNames = "products", key = "'id:' + #id")
     public ProductResponse getProduct(Long id) {
-        Product product = productRepository.findById(id)
+        return productRepository.findResponseById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found: " + id));
-        return toResponse(product);
-    }
-
-    private ProductResponse toResponse(Product product) {
-        return new ProductResponse(
-                product.getId(),
-                product.getSku(),
-                product.getName(),
-                product.getDescription(),
-                product.getPrice(),
-                product.isActive()
-        );
     }
 }

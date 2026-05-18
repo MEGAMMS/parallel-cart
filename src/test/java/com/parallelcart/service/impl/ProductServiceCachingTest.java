@@ -6,7 +6,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.parallelcart.api.dto.ProductResponse;
-import com.parallelcart.domain.model.Product;
 import com.parallelcart.infra.repository.ProductRepository;
 import com.parallelcart.service.ProductService;
 import java.math.BigDecimal;
@@ -48,19 +47,20 @@ class ProductServiceCachingTest {
 
     @Test
     void getProductUsesCacheForRepeatedRead() {
-        Product product = new Product();
-        product.setSku("SKU-1");
-        product.setName("Sample Product");
-        product.setDescription("Sample Desc");
-        product.setPrice(BigDecimal.TEN);
-        product.setActive(true);
+        ProductResponse product = new ProductResponse(
+                1L,
+                "SKU-1",
+                "Sample Product",
+                "Sample Desc",
+                BigDecimal.TEN,
+                true);
 
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.findResponseById(1L)).thenReturn(Optional.of(product));
 
         ProductResponse first = productService.getProduct(1L);
         ProductResponse second = productService.getProduct(1L);
 
         assertEquals(first, second);
-        verify(productRepository, times(1)).findById(1L);
+        verify(productRepository, times(1)).findResponseById(1L);
     }
 }
