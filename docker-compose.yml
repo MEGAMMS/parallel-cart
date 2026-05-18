@@ -89,6 +89,68 @@ services:
     ports:
       - "8080:8080"
 
+  app-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parallel-cart-app-1
+    profiles: ["lb"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/parallel_cart
+      SPRING_DATASOURCE_USERNAME: parallel_cart
+      SPRING_DATASOURCE_PASSWORD: parallel_cart
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_CACHE_TYPE: ${SPRING_CACHE_TYPE:-redis}
+      APP_BACKPRESSURE_CHECKOUT_MAX_CONCURRENT: ${APP_BACKPRESSURE_CHECKOUT_MAX_CONCURRENT:-50}
+
+  app-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parallel-cart-app-2
+    profiles: ["lb"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/parallel_cart
+      SPRING_DATASOURCE_USERNAME: parallel_cart
+      SPRING_DATASOURCE_PASSWORD: parallel_cart
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_CACHE_TYPE: ${SPRING_CACHE_TYPE:-redis}
+      APP_BACKPRESSURE_CHECKOUT_MAX_CONCURRENT: ${APP_BACKPRESSURE_CHECKOUT_MAX_CONCURRENT:-50}
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: parallel-cart-nginx
+    profiles: ["lb"]
+    depends_on:
+      app-1:
+        condition: service_started
+      app-2:
+        condition: service_started
+    ports:
+      - "8088:8080"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+
 volumes:
   postgres_data:
   redis_data:

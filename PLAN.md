@@ -1,7 +1,7 @@
 # PLAN.md — Parallel Cart Project Execution Plan
 
 ## Current Next Step
-- [ ] P5-T3: Run 2+ app instances behind Nginx load balancer.
+- [ ] P6-T1: Add AOP timing around critical operations (product read, checkout, inventory update).
 
 ## Working Rules
 - Complete tasks in order unless a blocker is documented.
@@ -144,8 +144,8 @@ Implement daily sales batch job and simulate multi-instance traffic distribution
 ### Tasks
 - [x] P5-T1: Build daily sales aggregation batch job (chunk-based processing).
 - [x] P5-T2: Add resumable progress markers/checkpointing.
-- [ ] P5-T3: Run 2+ app instances behind Nginx load balancer.
-- [ ] P5-T4: Document chosen distribution strategy and rationale.
+- [x] P5-T3: Run 2+ app instances behind Nginx load balancer.
+- [x] P5-T4: Document chosen distribution strategy and rationale.
 
 ### Acceptance Criteria
 - Batch completes on large dataset without memory spikes.

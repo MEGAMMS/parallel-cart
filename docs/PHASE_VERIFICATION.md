@@ -318,3 +318,25 @@ Full reset (also volumes):
 ```bash
 docker compose down -v
 ```
+
+## P5 Verification — Batch + Load Distribution
+
+### P5-T3: Run 2 app instances behind Nginx
+
+```bash
+docker compose --profile lb up -d --build app-1 app-2 nginx
+```
+
+Health check through load balancer:
+
+```bash
+curl -s http://localhost:8088/actuator/health
+```
+
+Show distribution target (run multiple times and observe alternating `X-Upstream-Addr`):
+
+```bash
+for i in {1..10}; do
+  curl -s -D - http://localhost:8088/api/products -o /dev/null | rg "X-Upstream-Addr"
+done
+```
