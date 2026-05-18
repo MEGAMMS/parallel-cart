@@ -159,8 +159,8 @@ verify_t4_backpressure_failfast() {
 
 run_benchmark() {
   echo "== P4 benchmark: before/after cache =="
-  echo '$ REQUESTS=1500 CONCURRENCY=60 ./scripts/benchmark_phase4.sh both'
-  REQUESTS=1500 CONCURRENCY=60 ./scripts/benchmark_phase4.sh both
+  echo '$ TARGET_VUS=220 HOLD=120s ./scripts/benchmark_phase4.sh both'
+  TARGET_VUS=220 HOLD=120s ./scripts/benchmark_phase4.sh both
 }
 
 case "$task" in

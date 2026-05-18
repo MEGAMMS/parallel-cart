@@ -289,6 +289,23 @@ What it verifies:
   - sends concurrent checkout requests
   - prints HTTP code counts (look for `503`)
 
+### P4 Benchmark: k6 before/after cache latency compare
+
+```bash
+# Strong signal run (big load):
+TARGET_VUS=220 HOLD=120s ./scripts/benchmark_phase4.sh both
+```
+
+What it does:
+- runs load test once with `SPRING_CACHE_TYPE=none` (before)
+- runs load test again with `SPRING_CACHE_TYPE=redis` (after)
+- compares avg/p95 latency and throughput
+- stores raw k6 summaries under `/tmp/parallel-cart-k6`
+
+Notes:
+- requires Docker (uses `grafana/k6` container)
+- tune load with `TARGET_VUS`, `HOLD`, `RAMP_UP`, `RAMP_DOWN`
+
 
 ## Cleanup
 
