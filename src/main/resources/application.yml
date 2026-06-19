@@ -55,3 +55,10 @@ app:
       ttl: 15m
     orders:
       ttl: 30m
+  distributed-lock:
+    inventory:
+      wait-time: 2s
+      lease-time: 10s
+    idempotency:
+      wait-time: 0s
+      lease-time: 15s

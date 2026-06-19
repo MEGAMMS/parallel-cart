@@ -25,6 +25,7 @@ import com.parallelcart.infra.repository.ProductRepository;
 import com.parallelcart.infra.repository.UserRepository;
 import com.parallelcart.service.CacheInvalidationService;
 import com.parallelcart.service.CartService;
+import com.parallelcart.service.DistributedLockService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -50,6 +51,7 @@ public class CartServiceImpl implements CartService {
     private final PaymentRepository paymentRepository;
     private final OutboxEventService outboxEventService;
     private final CacheInvalidationService cacheInvalidationService;
+    private final DistributedLockService distributedLockService;
 
     public CartServiceImpl(
             UserRepository userRepository,
@@ -60,7 +62,8 @@ public class CartServiceImpl implements CartService {
             OrderRepository orderRepository,
             PaymentRepository paymentRepository,
             OutboxEventService outboxEventService,
-            CacheInvalidationService cacheInvalidationService
+            CacheInvalidationService cacheInvalidationService,
+            DistributedLockService distributedLockService
     ) {
         this.userRepository = userRepository;
         this.productRepository = productRepository;
@@ -71,6 +74,7 @@ public class CartServiceImpl implements CartService {
         this.paymentRepository = paymentRepository;
         this.outboxEventService = outboxEventService;
         this.cacheInvalidationService = cacheInvalidationService;
+        this.distributedLockService = distributedLockService;
     }
 
     @Override
@@ -150,6 +154,13 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public CheckoutResponse checkout(Long userId, String idempotencyKey) {
+        return distributedLockService.executeWithIdempotencyLock(
+                idempotencyKey,
+                () -> checkoutWithIdempotencyLock(userId, idempotencyKey)
+        );
+    }
+
+    private CheckoutResponse checkoutWithIdempotencyLock(Long userId, String idempotencyKey) {
         User user = getUser(userId);
 
         Order existingOrder = orderRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey).orElse(null);
@@ -181,7 +192,10 @@ public class CartServiceImpl implements CartService {
         order.setStatus(OrderStatus.PENDING);
 
         for (CartItem cartItem : items) {
-            reserveInventoryWithRetry(cartItem.getProduct(), cartItem.getQuantity());
+            distributedLockService.executeWithInventoryLock(
+                    cartItem.getProduct().getId(),
+                    () -> reserveInventoryWithRetry(cartItem.getProduct(), cartItem.getQuantity())
+            );
 
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(order);

@@ -26,9 +26,11 @@ import com.parallelcart.infra.repository.ProductRepository;
 import com.parallelcart.infra.repository.UserRepository;
 import com.parallelcart.service.CacheInvalidationService;
 import com.parallelcart.service.CartService;
+import com.parallelcart.service.DistributedLockService;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,7 +62,8 @@ class CartServiceCachingTest {
                 OrderRepository orderRepository,
                 PaymentRepository paymentRepository,
                 OutboxEventService outboxEventService,
-                CacheInvalidationService cacheInvalidationService
+                CacheInvalidationService cacheInvalidationService,
+                DistributedLockService distributedLockService
         ) {
             return new CartServiceImpl(
                     userRepository,
@@ -71,8 +74,24 @@ class CartServiceCachingTest {
                     orderRepository,
                     paymentRepository,
                     outboxEventService,
-                    cacheInvalidationService
+                    cacheInvalidationService,
+                    distributedLockService
             );
+        }
+
+        @Bean
+        DistributedLockService distributedLockService() {
+            return new DistributedLockService() {
+                @Override
+                public <T> T executeWithInventoryLock(Long productId, Supplier<T> action) {
+                    return action.get();
+                }
+
+                @Override
+                public <T> T executeWithIdempotencyLock(String idempotencyKey, Supplier<T> action) {
+                    return action.get();
+                }
+            };
         }
 
         @Bean

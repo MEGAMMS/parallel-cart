@@ -1,6 +1,7 @@
 package com.parallelcart.api.controller;
 
 import com.parallelcart.api.dto.ApiErrorResponse;
+import com.parallelcart.service.DistributedLockUnavailableException;
 import com.parallelcart.service.SystemSaturatedException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
@@ -56,6 +57,22 @@ public class GlobalExceptionHandler {
                 Map.of()
         );
         return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(DistributedLockUnavailableException.class)
+    public ResponseEntity<ApiErrorResponse> handleDistributedLockUnavailable(
+            DistributedLockUnavailableException ex,
+            HttpServletRequest request
+    ) {
+        ApiErrorResponse response = new ApiErrorResponse(
+                Instant.now(),
+                HttpStatus.CONFLICT.value(),
+                "OperationInProgress",
+                ex.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
     @ExceptionHandler(IllegalStateException.class)
