@@ -11,6 +11,8 @@ public interface CartService {
 
     CartResponse removeItem(Long userId, Long itemId);
 
+    CartResponse clearCart(Long userId);
+
     CartResponse getCart(Long userId);
 
     CheckoutResponse checkout(Long userId, String idempotencyKey);

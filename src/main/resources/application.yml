@@ -46,3 +46,12 @@ management:
 logging:
   level:
     com.parallelcart.observability: DEBUG
+
+app:
+  cache:
+    product:
+      ttl-seconds: 60
+    carts:
+      ttl: 15m
+    orders:
+      ttl: 30m

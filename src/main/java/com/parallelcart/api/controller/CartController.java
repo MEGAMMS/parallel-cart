@@ -53,6 +53,11 @@ public class CartController {
         return cartService.removeItem(userId, itemId);
     }
 
+    @DeleteMapping
+    public CartResponse clearCart(@PathVariable Long userId) {
+        return cartService.clearCart(userId);
+    }
+
     @PostMapping("/checkout")
     public CheckoutResponse checkout(
             @PathVariable Long userId,

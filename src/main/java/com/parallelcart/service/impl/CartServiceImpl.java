@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -87,6 +88,7 @@ public class CartServiceImpl implements CartService {
 
         cart.touch();
         cartRepository.save(cart);
+        cacheInvalidationService.evictCartAfterCommit(userId);
         return toCartResponse(cart);
     }
 
@@ -105,6 +107,7 @@ public class CartServiceImpl implements CartService {
         cartItemRepository.save(item);
         cart.touch();
         cartRepository.save(cart);
+        cacheInvalidationService.evictCartAfterCommit(userId);
         return toCartResponse(cart);
     }
 
@@ -122,11 +125,24 @@ public class CartServiceImpl implements CartService {
         cartItemRepository.delete(item);
         cart.touch();
         cartRepository.save(cart);
+        cacheInvalidationService.evictCartAfterCommit(userId);
+        return toCartResponse(cart);
+    }
+
+    @Override
+    @Transactional
+    public CartResponse clearCart(Long userId) {
+        Cart cart = getOrCreateCart(getUser(userId));
+        cartItemRepository.deleteAll(cartItemRepository.findByCart(cart));
+        cart.touch();
+        cartRepository.save(cart);
+        cacheInvalidationService.evictCartAfterCommit(userId);
         return toCartResponse(cart);
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "carts", key = "'user:' + #userId", sync = true)
     public CartResponse getCart(Long userId) {
         return toCartResponse(getOrCreateCart(getUser(userId)));
     }
@@ -205,6 +221,8 @@ public class CartServiceImpl implements CartService {
                 order.getStatus().name(),
                 Instant.now()
         ));
+        cacheInvalidationService.evictCartAfterCommit(userId);
+        cacheInvalidationService.evictOrderAfterCommit(order.getId(), userId);
         cacheInvalidationService.evictProductsAfterCommit(touchedProductIds);
 
         return new CheckoutResponse(order.getId(), payment.getId(), total, order.getStatus().name());
