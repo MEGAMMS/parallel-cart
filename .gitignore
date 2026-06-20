@@ -34,3 +34,9 @@ build/
 
 # extension specific ignores
 parallel-cart-output.*
+
+/apache-jmeter-5.6.3
+/jmeter.log
+/jmeter
+/reports/jmeter
+/reports
