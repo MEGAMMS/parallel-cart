@@ -7,7 +7,9 @@ import static org.mockito.Mockito.when;
 
 import com.parallelcart.api.dto.ProductResponse;
 import com.parallelcart.infra.repository.ProductRepository;
+import com.parallelcart.observability.BenchmarkMetricsService;
 import com.parallelcart.service.ProductService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -29,8 +31,13 @@ class ProductServiceCachingTest {
     @EnableCaching
     static class TestConfig {
         @Bean
-        ProductServiceImpl productService(ProductRepository productRepository) {
-            return new ProductServiceImpl(productRepository);
+        ProductServiceImpl productService(ProductRepository productRepository, BenchmarkMetricsService metricsService) {
+            return new ProductServiceImpl(productRepository, metricsService);
+        }
+
+        @Bean
+        BenchmarkMetricsService benchmarkMetricsService() {
+            return new BenchmarkMetricsService(new SimpleMeterRegistry());
         }
 
         @Bean

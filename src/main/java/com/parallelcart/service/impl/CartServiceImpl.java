@@ -23,9 +23,11 @@ import com.parallelcart.infra.repository.OrderRepository;
 import com.parallelcart.infra.repository.PaymentRepository;
 import com.parallelcart.infra.repository.ProductRepository;
 import com.parallelcart.infra.repository.UserRepository;
+import com.parallelcart.observability.BenchmarkMetricsService;
 import com.parallelcart.service.CacheInvalidationService;
 import com.parallelcart.service.CartService;
 import com.parallelcart.service.DistributedLockService;
+import io.micrometer.core.instrument.Tags;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -37,6 +39,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 public class CartServiceImpl implements CartService {
@@ -52,6 +56,7 @@ public class CartServiceImpl implements CartService {
     private final OutboxEventService outboxEventService;
     private final CacheInvalidationService cacheInvalidationService;
     private final DistributedLockService distributedLockService;
+    private final BenchmarkMetricsService metricsService;
 
     public CartServiceImpl(
             UserRepository userRepository,
@@ -63,7 +68,8 @@ public class CartServiceImpl implements CartService {
             PaymentRepository paymentRepository,
             OutboxEventService outboxEventService,
             CacheInvalidationService cacheInvalidationService,
-            DistributedLockService distributedLockService
+            DistributedLockService distributedLockService,
+            BenchmarkMetricsService metricsService
     ) {
         this.userRepository = userRepository;
         this.productRepository = productRepository;
@@ -75,6 +81,7 @@ public class CartServiceImpl implements CartService {
         this.outboxEventService = outboxEventService;
         this.cacheInvalidationService = cacheInvalidationService;
         this.distributedLockService = distributedLockService;
+        this.metricsService = metricsService;
     }
 
     @Override
@@ -148,19 +155,26 @@ public class CartServiceImpl implements CartService {
     @Transactional(readOnly = true)
     @Cacheable(cacheNames = "carts", key = "'user:' + #userId", sync = true)
     public CartResponse getCart(Long userId) {
-        return toCartResponse(getOrCreateCart(getUser(userId)));
+        return metricsService.time(
+                "parallelcart.cache.backing_load.duration",
+                Tags.of("cache", "carts", "operation", "get_by_user"),
+                () -> toCartResponse(getOrCreateCart(getUser(userId))));
     }
 
     @Override
     @Transactional
     public CheckoutResponse checkout(Long userId, String idempotencyKey) {
-        return distributedLockService.executeWithIdempotencyLock(
-                idempotencyKey,
-                () -> checkoutWithIdempotencyLock(userId, idempotencyKey)
+        return metricsService.time(
+                "parallelcart.checkout.total.duration",
+                Tags.of("operation", "checkout"),
+                () -> distributedLockService.executeWithIdempotencyLock(
+                        idempotencyKey,
+                        () -> checkoutWithIdempotencyLock(userId, idempotencyKey))
         );
     }
 
     private CheckoutResponse checkoutWithIdempotencyLock(Long userId, String idempotencyKey) {
+        long cartLoadStartedNanos = System.nanoTime();
         User user = getUser(userId);
 
         Order existingOrder = orderRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey).orElse(null);
@@ -168,6 +182,8 @@ public class CartServiceImpl implements CartService {
             Payment existingPayment = paymentRepository.findFirstByOrderId(existingOrder.getId()).orElseThrow(
                     () -> new IllegalStateException("Payment missing for existing idempotent order " + existingOrder.getId())
             );
+            recordCheckoutPhase("cart_load", cartLoadStartedNanos);
+            metricsService.increment("parallelcart.checkout.idempotent_replay.total", Tags.empty());
             return new CheckoutResponse(
                     existingOrder.getId(),
                     existingPayment.getId(),
@@ -178,8 +194,10 @@ public class CartServiceImpl implements CartService {
 
         Cart cart = getOrCreateCart(user);
         List<CartItem> items = cartItemRepository.findByCart(cart);
+        recordCheckoutPhase("cart_load", cartLoadStartedNanos);
 
         if (items.isEmpty()) {
+            metricsService.increment("parallelcart.checkout.empty_cart.total", Tags.empty());
             throw new IllegalStateException("Cart is empty");
         }
         Set<Long> touchedProductIds = items.stream()
@@ -191,6 +209,7 @@ public class CartServiceImpl implements CartService {
         order.setUser(user);
         order.setStatus(OrderStatus.PENDING);
 
+        long inventoryStartedNanos = System.nanoTime();
         for (CartItem cartItem : items) {
             distributedLockService.executeWithInventoryLock(
                     cartItem.getProduct().getId(),
@@ -206,27 +225,46 @@ public class CartServiceImpl implements CartService {
 
             total = total.add(cartItem.getProduct().getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity())));
         }
+        recordCheckoutPhase("inventory_reservation", inventoryStartedNanos);
 
         if (total.signum() <= 0) {
+            metricsService.increment("parallelcart.checkout.invalid_total.total", Tags.empty());
             throw new IllegalStateException("Invalid checkout total");
         }
 
+        long orderStartedNanos = System.nanoTime();
         order.setIdempotencyKey(idempotencyKey);
         order.setTotalAmount(total);
         order.setStatus(OrderStatus.PAID);
-        order = orderRepository.save(order);
+        Order orderToSave = order;
+        order = metricsService.time(
+                "parallelcart.database.query.duration",
+                Tags.of("query", "order_save"),
+                () -> orderRepository.save(orderToSave));
 
         Payment payment = new Payment();
         payment.setOrder(order);
         payment.setAmount(total);
         payment.setExternalRef("PAY-" + Instant.now().toEpochMilli() + "-" + UUID.randomUUID());
         payment.setStatus(PaymentStatus.CAPTURED);
-        payment = paymentRepository.save(payment);
+        Payment paymentToSave = payment;
+        payment = metricsService.time(
+                "parallelcart.database.query.duration",
+                Tags.of("query", "payment_save"),
+                () -> paymentRepository.save(paymentToSave));
 
-        cartItemRepository.deleteAll(items);
+        metricsService.time(
+                "parallelcart.database.query.duration",
+                Tags.of("query", "cart_items_delete"),
+                () -> cartItemRepository.deleteAll(items));
         cart.touch();
-        cartRepository.save(cart);
+        metricsService.time(
+                "parallelcart.database.query.duration",
+                Tags.of("query", "cart_save"),
+                () -> cartRepository.save(cart));
+        recordCheckoutPhase("order_creation", orderStartedNanos);
 
+        long outboxStartedNanos = System.nanoTime();
         outboxEventService.enqueueOrderCreated(new OrderCreatedEvent(
                 order.getId(),
                 user.getId(),
@@ -235,33 +273,59 @@ public class CartServiceImpl implements CartService {
                 order.getStatus().name(),
                 Instant.now()
         ));
+        recordCheckoutPhase("outbox_write", outboxStartedNanos);
+
+        long cacheStartedNanos = System.nanoTime();
         cacheInvalidationService.evictCartAfterCommit(userId);
         cacheInvalidationService.evictOrderAfterCommit(order.getId(), userId);
         cacheInvalidationService.evictProductsAfterCommit(touchedProductIds);
+        recordCheckoutPhase("cache_invalidation", cacheStartedNanos);
 
         return new CheckoutResponse(order.getId(), payment.getId(), total, order.getStatus().name());
     }
 
     private void reserveInventoryWithRetry(Product product, Integer requestedQuantity) {
+        Tags productTags = Tags.of("product_id", String.valueOf(product.getId()));
+        metricsService.increment("parallelcart.inventory.reservation.total", productTags);
         ObjectOptimisticLockingFailureException lastConflict = null;
+        int retries = 0;
         for (int attempt = 1; attempt <= INVENTORY_RETRY_MAX_ATTEMPTS; attempt++) {
-            Inventory inventory = inventoryRepository.findByProduct(product)
+            Inventory inventory = metricsService.time(
+                            "parallelcart.database.query.duration",
+                            Tags.of("query", "inventory_find", "product_id", String.valueOf(product.getId())),
+                            () -> inventoryRepository.findByProduct(product))
                     .orElseThrow(() -> new IllegalStateException("Inventory missing for product " + product.getId()));
 
             if (inventory.getAvailableQuantity() < requestedQuantity) {
+                metricsService.increment("parallelcart.inventory.reservation.failure.total",
+                        productTags.and("reason", "insufficient_inventory"));
                 throw new IllegalStateException("Insufficient inventory for product " + product.getId());
             }
 
             inventory.setAvailableQuantity(inventory.getAvailableQuantity() - requestedQuantity);
             try {
-                inventoryRepository.saveAndFlush(inventory);
+                metricsService.time(
+                        "parallelcart.database.query.duration",
+                        Tags.of("query", "inventory_save_flush", "product_id", String.valueOf(product.getId())),
+                        () -> inventoryRepository.saveAndFlush(inventory));
+                metricsService.recordDistribution(
+                        "parallelcart.inventory.optimistic.retry.count",
+                        productTags,
+                        retries);
                 return;
             } catch (ObjectOptimisticLockingFailureException ex) {
                 lastConflict = ex;
-                sleepWithJitter();
+                retries++;
+                metricsService.increment("parallelcart.inventory.optimistic.retry.total", productTags);
+                sleepWithJitter(product.getId());
             }
         }
 
+        metricsService.increment("parallelcart.inventory.pessimistic.fallback.total", productTags);
+        metricsService.recordDistribution(
+                "parallelcart.inventory.optimistic.retry.count",
+                productTags,
+                retries);
         reserveInventoryWithPessimisticLock(product, requestedQuantity, lastConflict);
     }
 
@@ -270,32 +334,78 @@ public class CartServiceImpl implements CartService {
             Integer requestedQuantity,
             ObjectOptimisticLockingFailureException lastConflict
     ) {
-        Inventory lockedInventory = inventoryRepository.findByProductForUpdate(product)
+        Tags productTags = Tags.of("product_id", String.valueOf(product.getId()));
+        long lockWaitStartedNanos = System.nanoTime();
+        Inventory lockedInventory = metricsService.time(
+                        "parallelcart.database.query.duration",
+                        Tags.of("query", "inventory_find_for_update", "product_id", String.valueOf(product.getId())),
+                        () -> inventoryRepository.findByProductForUpdate(product))
                 .orElseThrow(() -> new IllegalStateException("Inventory missing for product " + product.getId()));
+        metricsService.recordDuration(
+                "parallelcart.inventory.pessimistic.lock.wait.duration",
+                productTags,
+                System.nanoTime() - lockWaitStartedNanos);
+        long lockHoldStartedNanos = System.nanoTime();
+        recordAfterTransactionCompletion(
+                "parallelcart.inventory.pessimistic.lock.hold.duration",
+                productTags,
+                lockHoldStartedNanos);
 
         if (lockedInventory.getAvailableQuantity() < requestedQuantity) {
+            metricsService.increment("parallelcart.inventory.reservation.failure.total",
+                    productTags.and("reason", "insufficient_inventory"));
             throw new IllegalStateException("Insufficient inventory for product " + product.getId());
         }
 
         lockedInventory.setAvailableQuantity(lockedInventory.getAvailableQuantity() - requestedQuantity);
         try {
-            inventoryRepository.saveAndFlush(lockedInventory);
+            metricsService.time(
+                    "parallelcart.database.query.duration",
+                    Tags.of("query", "inventory_pessimistic_save_flush", "product_id", String.valueOf(product.getId())),
+                    () -> inventoryRepository.saveAndFlush(lockedInventory));
         } catch (ObjectOptimisticLockingFailureException ex) {
             if (lastConflict != null) {
                 ex.addSuppressed(lastConflict);
             }
+            metricsService.increment("parallelcart.inventory.optimistic.failure.total", productTags);
             throw ex;
         }
     }
 
-    private void sleepWithJitter() {
+    private void sleepWithJitter(Long productId) {
         long sleepMillis = ThreadLocalRandom.current().nextLong(20, 81);
+        long startNanos = System.nanoTime();
         try {
             Thread.sleep(sleepMillis);
         } catch (InterruptedException interruptedException) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted during inventory retry wait", interruptedException);
+        } finally {
+            metricsService.recordDuration(
+                    "parallelcart.inventory.optimistic.retry.sleep.duration",
+                    Tags.of("product_id", String.valueOf(productId)),
+                    System.nanoTime() - startNanos);
         }
+    }
+
+    private void recordCheckoutPhase(String phase, long startedNanos) {
+        metricsService.recordDuration(
+                "parallelcart.checkout.phase.duration",
+                Tags.of("phase", phase),
+                System.nanoTime() - startedNanos);
+    }
+
+    private void recordAfterTransactionCompletion(String metricName, Tags tags, long startedNanos) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            metricsService.recordDuration(metricName, tags, System.nanoTime() - startedNanos);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                metricsService.recordDuration(metricName, tags, System.nanoTime() - startedNanos);
+            }
+        });
     }
 
     private User getUser(Long userId) {

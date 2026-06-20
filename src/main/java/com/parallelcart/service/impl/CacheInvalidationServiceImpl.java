@@ -1,6 +1,8 @@
 package com.parallelcart.service.impl;
 
+import com.parallelcart.observability.BenchmarkMetricsService;
 import com.parallelcart.service.CacheInvalidationService;
+import io.micrometer.core.instrument.Tags;
 import java.util.Set;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -16,9 +18,11 @@ public class CacheInvalidationServiceImpl implements CacheInvalidationService {
     private static final String ORDERS_CACHE = "orders";
 
     private final CacheManager cacheManager;
+    private final BenchmarkMetricsService metricsService;
 
-    public CacheInvalidationServiceImpl(CacheManager cacheManager) {
+    public CacheInvalidationServiceImpl(CacheManager cacheManager, BenchmarkMetricsService metricsService) {
         this.cacheManager = cacheManager;
+        this.metricsService = metricsService;
     }
 
     @Override
@@ -50,6 +54,7 @@ public class CacheInvalidationServiceImpl implements CacheInvalidationService {
     }
 
     private void evictProductsNow(Set<Long> productIds) {
+        long startedNanos = System.nanoTime();
         Cache cache = cacheManager.getCache(PRODUCTS_CACHE);
         if (cache == null) {
             return;
@@ -58,17 +63,29 @@ public class CacheInvalidationServiceImpl implements CacheInvalidationService {
         for (Long productId : productIds) {
             cache.evict("id:" + productId);
         }
+        metricsService.recordDuration(
+                "parallelcart.cache.invalidation.duration",
+                Tags.of("cache", PRODUCTS_CACHE),
+                System.nanoTime() - startedNanos);
+        metricsService.increment("parallelcart.cache.invalidation.total", Tags.of("cache", PRODUCTS_CACHE));
     }
 
     private void evictCartNow(Long userId) {
+        long startedNanos = System.nanoTime();
         Cache cache = cacheManager.getCache(CARTS_CACHE);
         if (cache == null || userId == null) {
             return;
         }
         cache.evict("user:" + userId);
+        metricsService.recordDuration(
+                "parallelcart.cache.invalidation.duration",
+                Tags.of("cache", CARTS_CACHE),
+                System.nanoTime() - startedNanos);
+        metricsService.increment("parallelcart.cache.invalidation.total", Tags.of("cache", CARTS_CACHE));
     }
 
     private void evictOrderNow(Long orderId, Long userId) {
+        long startedNanos = System.nanoTime();
         Cache cache = cacheManager.getCache(ORDERS_CACHE);
         if (cache == null) {
             return;
@@ -79,5 +96,10 @@ public class CacheInvalidationServiceImpl implements CacheInvalidationService {
         if (userId != null) {
             cache.evict("user:" + userId);
         }
+        metricsService.recordDuration(
+                "parallelcart.cache.invalidation.duration",
+                Tags.of("cache", ORDERS_CACHE),
+                System.nanoTime() - startedNanos);
+        metricsService.increment("parallelcart.cache.invalidation.total", Tags.of("cache", ORDERS_CACHE));
     }
 }

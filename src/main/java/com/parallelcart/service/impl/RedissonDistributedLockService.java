@@ -2,8 +2,10 @@ package com.parallelcart.service.impl;
 
 import com.parallelcart.config.DistributedLockProperties;
 import com.parallelcart.config.DistributedLockProperties.LockSettings;
+import com.parallelcart.observability.BenchmarkMetricsService;
 import com.parallelcart.service.DistributedLockService;
 import com.parallelcart.service.DistributedLockUnavailableException;
+import io.micrometer.core.instrument.Tags;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -24,13 +26,16 @@ public class RedissonDistributedLockService implements DistributedLockService {
 
     private final RedissonClient redissonClient;
     private final DistributedLockProperties lockProperties;
+    private final BenchmarkMetricsService metricsService;
 
     public RedissonDistributedLockService(
             RedissonClient redissonClient,
-            DistributedLockProperties lockProperties
+            DistributedLockProperties lockProperties,
+            BenchmarkMetricsService metricsService
     ) {
         this.redissonClient = redissonClient;
         this.lockProperties = lockProperties;
+        this.metricsService = metricsService;
     }
 
     @Override
@@ -40,6 +45,7 @@ public class RedissonDistributedLockService implements DistributedLockService {
                 lockKey,
                 lockProperties.getInventory(),
                 "inventory",
+                String.valueOf(productId),
                 "Inventory for product " + productId + " is currently being processed. Retry shortly.",
                 action
         );
@@ -52,6 +58,7 @@ public class RedissonDistributedLockService implements DistributedLockService {
                 lockKey,
                 lockProperties.getIdempotency(),
                 "idempotency",
+                null,
                 "Checkout with this idempotency key is already in progress.",
                 action
         );
@@ -61,20 +68,26 @@ public class RedissonDistributedLockService implements DistributedLockService {
             String lockKey,
             LockSettings settings,
             String eventPrefix,
+            String resourceId,
             String failureMessage,
             Supplier<T> action
     ) {
         RLock lock = redissonClient.getLock(lockKey);
+        Tags lockTags = lockTags(eventPrefix, resourceId);
+        metricsService.increment("parallelcart.lock.acquire.total", lockTags);
         long acquisitionStartedNanos = System.nanoTime();
         boolean acquired = tryAcquire(lock, lockKey, settings, eventPrefix, failureMessage);
         Duration waitDuration = elapsedSince(acquisitionStartedNanos);
+        metricsService.recordDuration("parallelcart.lock.wait.duration", lockTags, waitDuration);
 
         if (!acquired) {
+            metricsService.increment("parallelcart.lock.acquire.failed.total", lockTags);
             log.warn("{}_lock_failed lock_key={} wait_duration_ms={} execution_duration_ms={}",
                     eventPrefix, lockKey, waitDuration.toMillis(), 0);
             throw new DistributedLockUnavailableException(failureMessage);
         }
 
+        metricsService.increment("parallelcart.lock.acquire.succeeded.total", lockTags);
         log.info("{}_lock_acquired lock_key={} wait_duration_ms={} execution_duration_ms={}",
                 eventPrefix, lockKey, waitDuration.toMillis(), 0);
 
@@ -84,9 +97,9 @@ public class RedissonDistributedLockService implements DistributedLockService {
             return action.get();
         } finally {
             unlockDeferred = deferUnlockUntilTransactionCompletionIfNeeded(
-                    lock, eventPrefix, lockKey, waitDuration, executionStartedNanos);
+                    lock, eventPrefix, lockKey, lockTags, waitDuration, executionStartedNanos);
             if (!unlockDeferred) {
-                unlock(lock, eventPrefix, lockKey, waitDuration, executionStartedNanos);
+                unlock(lock, eventPrefix, lockKey, lockTags, waitDuration, executionStartedNanos);
             }
         }
     }
@@ -116,6 +129,7 @@ public class RedissonDistributedLockService implements DistributedLockService {
             RLock lock,
             String eventPrefix,
             String lockKey,
+            Tags lockTags,
             Duration waitDuration,
             long executionStartedNanos
     ) {
@@ -126,7 +140,7 @@ public class RedissonDistributedLockService implements DistributedLockService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCompletion(int status) {
-                unlock(lock, eventPrefix, lockKey, waitDuration, executionStartedNanos);
+                unlock(lock, eventPrefix, lockKey, lockTags, waitDuration, executionStartedNanos);
             }
         });
         return true;
@@ -136,10 +150,12 @@ public class RedissonDistributedLockService implements DistributedLockService {
             RLock lock,
             String eventPrefix,
             String lockKey,
+            Tags lockTags,
             Duration waitDuration,
             long executionStartedNanos
     ) {
         Duration executionDuration = elapsedSince(executionStartedNanos);
+        metricsService.recordDuration("parallelcart.lock.hold.duration", lockTags, executionDuration);
         try {
             if (lock.isHeldByCurrentThread()) {
                 lock.unlock();
@@ -157,5 +173,13 @@ public class RedissonDistributedLockService implements DistributedLockService {
 
     private Duration elapsedSince(long startedNanos) {
         return Duration.ofNanos(System.nanoTime() - startedNanos);
+    }
+
+    private Tags lockTags(String eventPrefix, String resourceId) {
+        Tags tags = Tags.of("lock_type", eventPrefix);
+        if ("inventory".equals(eventPrefix) && resourceId != null) {
+            return tags.and("product_id", resourceId);
+        }
+        return tags.and("product_id", "none");
     }
 }

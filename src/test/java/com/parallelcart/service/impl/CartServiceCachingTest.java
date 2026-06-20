@@ -24,9 +24,11 @@ import com.parallelcart.infra.repository.OrderRepository;
 import com.parallelcart.infra.repository.PaymentRepository;
 import com.parallelcart.infra.repository.ProductRepository;
 import com.parallelcart.infra.repository.UserRepository;
+import com.parallelcart.observability.BenchmarkMetricsService;
 import com.parallelcart.service.CacheInvalidationService;
 import com.parallelcart.service.CartService;
 import com.parallelcart.service.DistributedLockService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -63,7 +65,8 @@ class CartServiceCachingTest {
                 PaymentRepository paymentRepository,
                 OutboxEventService outboxEventService,
                 CacheInvalidationService cacheInvalidationService,
-                DistributedLockService distributedLockService
+                DistributedLockService distributedLockService,
+                BenchmarkMetricsService metricsService
         ) {
             return new CartServiceImpl(
                     userRepository,
@@ -75,7 +78,8 @@ class CartServiceCachingTest {
                     paymentRepository,
                     outboxEventService,
                     cacheInvalidationService,
-                    distributedLockService
+                    distributedLockService,
+                    metricsService
             );
         }
 
@@ -95,8 +99,13 @@ class CartServiceCachingTest {
         }
 
         @Bean
-        CacheInvalidationService cacheInvalidationService(CacheManager cacheManager) {
-            return new CacheInvalidationServiceImpl(cacheManager);
+        CacheInvalidationService cacheInvalidationService(CacheManager cacheManager, BenchmarkMetricsService metricsService) {
+            return new CacheInvalidationServiceImpl(cacheManager, metricsService);
+        }
+
+        @Bean
+        BenchmarkMetricsService benchmarkMetricsService() {
+            return new BenchmarkMetricsService(new SimpleMeterRegistry());
         }
 
         @Bean

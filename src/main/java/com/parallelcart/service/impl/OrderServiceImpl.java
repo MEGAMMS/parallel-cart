@@ -6,8 +6,10 @@ import com.parallelcart.domain.model.Order;
 import com.parallelcart.domain.model.OrderItem;
 import com.parallelcart.domain.model.enums.OrderStatus;
 import com.parallelcart.infra.repository.OrderRepository;
+import com.parallelcart.observability.BenchmarkMetricsService;
 import com.parallelcart.service.CacheInvalidationService;
 import com.parallelcart.service.OrderService;
+import io.micrometer.core.instrument.Tags;
 import java.util.Comparator;
 import java.util.List;
 import org.springframework.cache.annotation.Cacheable;
@@ -19,20 +21,26 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final CacheInvalidationService cacheInvalidationService;
+    private final BenchmarkMetricsService metricsService;
 
     public OrderServiceImpl(
             OrderRepository orderRepository,
-            CacheInvalidationService cacheInvalidationService
+            CacheInvalidationService cacheInvalidationService,
+            BenchmarkMetricsService metricsService
     ) {
         this.orderRepository = orderRepository;
         this.cacheInvalidationService = cacheInvalidationService;
+        this.metricsService = metricsService;
     }
 
     @Override
     @Transactional(readOnly = true)
     @Cacheable(cacheNames = "orders", key = "'id:' + #orderId", sync = true)
     public OrderResponse getOrder(Long orderId) {
-        return toOrderResponse(orderRepository.findByIdWithItems(orderId)
+        return toOrderResponse(metricsService.time(
+                        "parallelcart.cache.backing_load.duration",
+                        Tags.of("cache", "orders", "operation", "get_by_id"),
+                        () -> orderRepository.findByIdWithItems(orderId))
                 .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId)));
     }
 
@@ -40,7 +48,11 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     @Cacheable(cacheNames = "orders", key = "'user:' + #userId", sync = true)
     public List<OrderResponse> getOrdersByUser(Long userId) {
-        return orderRepository.findByUserIdWithItemsOrderByIdDesc(userId).stream()
+        return metricsService.time(
+                        "parallelcart.cache.backing_load.duration",
+                        Tags.of("cache", "orders", "operation", "get_by_user"),
+                        () -> orderRepository.findByUserIdWithItemsOrderByIdDesc(userId))
+                .stream()
                 .map(this::toOrderResponse)
                 .toList();
     }

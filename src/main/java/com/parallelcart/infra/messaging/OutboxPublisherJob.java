@@ -6,6 +6,8 @@ import com.parallelcart.domain.model.OutboxEvent;
 import com.parallelcart.domain.model.enums.OutboxStatus;
 import com.parallelcart.infra.messaging.events.OrderCreatedEvent;
 import com.parallelcart.infra.repository.OutboxEventRepository;
+import com.parallelcart.observability.BenchmarkMetricsService;
+import io.micrometer.core.instrument.Tags;
 import java.time.Instant;
 import java.util.List;
 import org.slf4j.Logger;
@@ -26,28 +28,40 @@ public class OutboxPublisherJob {
     private final OrderEventPublisher orderEventPublisher;
     private final ObjectMapper objectMapper;
     private final int maxAttempts;
+    private final BenchmarkMetricsService metricsService;
 
     public OutboxPublisherJob(
             OutboxEventRepository outboxEventRepository,
             OrderEventPublisher orderEventPublisher,
             ObjectMapper objectMapper,
-            @Value("${app.outbox.max-publish-attempts:5}") int maxAttempts) {
+            @Value("${app.outbox.max-publish-attempts:5}") int maxAttempts,
+            BenchmarkMetricsService metricsService) {
         this.outboxEventRepository = outboxEventRepository;
         this.orderEventPublisher = orderEventPublisher;
         this.objectMapper = objectMapper;
         this.maxAttempts = maxAttempts;
+        this.metricsService = metricsService;
     }
 
     @Scheduled(fixedDelayString = "${app.outbox.publisher.fixed-delay-ms:2000}")
     @Transactional
     public void publishPendingEvents() {
-        List<OutboxEvent> pendingEvents = outboxEventRepository.findTop100ByStatusOrderByCreatedAtAsc(OutboxStatus.PENDING);
+        List<OutboxEvent> pendingEvents = metricsService.time(
+                "parallelcart.database.query.duration",
+                Tags.of("query", "outbox_find_pending"),
+                () -> outboxEventRepository.findTop100ByStatusOrderByCreatedAtAsc(OutboxStatus.PENDING));
+        metricsService.recordDistribution(
+                "parallelcart.outbox.batch.size",
+                Tags.of("status", "pending"),
+                pendingEvents.size());
         for (OutboxEvent event : pendingEvents) {
             publishSingle(event);
         }
     }
 
     private void publishSingle(OutboxEvent event) {
+        long startedNanos = System.nanoTime();
+        Tags tags = Tags.of("event_type", event.getEventType());
         event.setPublishAttempts(event.getPublishAttempts() + 1);
         try {
             if ("ORDER_CREATED".equals(event.getEventType())) {
@@ -59,11 +73,13 @@ public class OutboxPublisherJob {
             event.setStatus(OutboxStatus.PUBLISHED);
             event.setPublishedAt(Instant.now());
             event.setLastError(null);
+            metricsService.increment("parallelcart.outbox.publish.total", tags.and("status", "published"));
         } catch (Exception ex) {
             event.setLastError(shortMessage(ex));
             if (event.getPublishAttempts() >= maxAttempts) {
                 event.setStatus(OutboxStatus.FAILED);
             }
+            metricsService.increment("parallelcart.outbox.publish.total", tags.and("status", "failed"));
             log.error(
                     "outbox_publish_failed eventId={} eventType={} attempts={} status={} errorType={} errorMessage={}",
                     event.getId(),
@@ -72,8 +88,16 @@ public class OutboxPublisherJob {
                     event.getStatus(),
                     ex.getClass().getSimpleName(),
                     ex.getMessage());
+        } finally {
+            metricsService.recordDuration(
+                    "parallelcart.outbox.publish.duration",
+                    tags.and("status", event.getStatus().name()),
+                    System.nanoTime() - startedNanos);
         }
-        outboxEventRepository.save(event);
+        metricsService.time(
+                "parallelcart.database.query.duration",
+                Tags.of("query", "outbox_save_status", "status", event.getStatus().name()),
+                () -> outboxEventRepository.save(event));
     }
 
     private String shortMessage(Exception ex) {

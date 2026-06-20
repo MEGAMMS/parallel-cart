@@ -6,6 +6,8 @@ import com.parallelcart.domain.model.OutboxEvent;
 import com.parallelcart.domain.model.enums.OutboxStatus;
 import com.parallelcart.infra.messaging.events.OrderCreatedEvent;
 import com.parallelcart.infra.repository.OutboxEventRepository;
+import com.parallelcart.observability.BenchmarkMetricsService;
+import io.micrometer.core.instrument.Tags;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,10 +15,15 @@ public class OutboxEventService {
 
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+    private final BenchmarkMetricsService metricsService;
 
-    public OutboxEventService(OutboxEventRepository outboxEventRepository, ObjectMapper objectMapper) {
+    public OutboxEventService(
+            OutboxEventRepository outboxEventRepository,
+            ObjectMapper objectMapper,
+            BenchmarkMetricsService metricsService) {
         this.outboxEventRepository = outboxEventRepository;
         this.objectMapper = objectMapper;
+        this.metricsService = metricsService;
     }
 
     public void enqueueOrderCreated(OrderCreatedEvent event) {
@@ -26,7 +33,11 @@ public class OutboxEventService {
         outboxEvent.setAggregateId(event.orderId());
         outboxEvent.setStatus(OutboxStatus.PENDING);
         outboxEvent.setPayload(toJson(event));
-        outboxEventRepository.save(outboxEvent);
+        metricsService.time(
+                "parallelcart.outbox.write.duration",
+                Tags.of("event_type", "ORDER_CREATED"),
+                () -> outboxEventRepository.save(outboxEvent));
+        metricsService.increment("parallelcart.outbox.write.total", Tags.of("event_type", "ORDER_CREATED"));
     }
 
     private String toJson(OrderCreatedEvent event) {

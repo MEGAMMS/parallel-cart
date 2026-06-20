@@ -11,7 +11,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,bottlenecks,benchmarkreport
   endpoint:
     health:
       validate-group-membership: false

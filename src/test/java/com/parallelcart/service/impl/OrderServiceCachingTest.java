@@ -12,8 +12,10 @@ import com.parallelcart.domain.model.Product;
 import com.parallelcart.domain.model.User;
 import com.parallelcart.domain.model.enums.OrderStatus;
 import com.parallelcart.infra.repository.OrderRepository;
+import com.parallelcart.observability.BenchmarkMetricsService;
 import com.parallelcart.service.CacheInvalidationService;
 import com.parallelcart.service.OrderService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -41,14 +43,20 @@ class OrderServiceCachingTest {
         @Bean
         OrderServiceImpl orderService(
                 OrderRepository orderRepository,
-                CacheInvalidationService cacheInvalidationService
+                CacheInvalidationService cacheInvalidationService,
+                BenchmarkMetricsService metricsService
         ) {
-            return new OrderServiceImpl(orderRepository, cacheInvalidationService);
+            return new OrderServiceImpl(orderRepository, cacheInvalidationService, metricsService);
         }
 
         @Bean
-        CacheInvalidationService cacheInvalidationService(CacheManager cacheManager) {
-            return new CacheInvalidationServiceImpl(cacheManager);
+        CacheInvalidationService cacheInvalidationService(CacheManager cacheManager, BenchmarkMetricsService metricsService) {
+            return new CacheInvalidationServiceImpl(cacheManager, metricsService);
+        }
+
+        @Bean
+        BenchmarkMetricsService benchmarkMetricsService() {
+            return new BenchmarkMetricsService(new SimpleMeterRegistry());
         }
 
         @Bean

@@ -1,5 +1,9 @@
 package com.parallelcart.config;
 
+import com.parallelcart.observability.BenchmarkMetricsService;
+import com.parallelcart.observability.MetricsTaskDecorator;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import java.util.concurrent.ThreadPoolExecutor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -9,6 +13,14 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 @Configuration
 public class ResourceManagementConfig {
+
+    private final BenchmarkMetricsService metricsService;
+    private final MeterRegistry meterRegistry;
+
+    public ResourceManagementConfig(BenchmarkMetricsService metricsService, MeterRegistry meterRegistry) {
+        this.metricsService = metricsService;
+        this.meterRegistry = meterRegistry;
+    }
 
     @Bean(name = "applicationTaskExecutor")
     public ThreadPoolTaskExecutor applicationTaskExecutor(
@@ -23,7 +35,9 @@ public class ResourceManagementConfig {
         executor.setQueueCapacity(queueCapacity);
         executor.setKeepAliveSeconds(keepAliveSeconds);
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setTaskDecorator(new MetricsTaskDecorator(metricsService, "applicationTaskExecutor"));
         executor.initialize();
+        bindExecutorGauges("applicationTaskExecutor", executor.getThreadPoolExecutor());
         return executor;
     }
 
@@ -35,6 +49,15 @@ public class ResourceManagementConfig {
         scheduler.setThreadNamePrefix("app-scheduler-");
         scheduler.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         scheduler.initialize();
+        bindExecutorGauges("taskScheduler", scheduler.getScheduledThreadPoolExecutor());
         return scheduler;
+    }
+
+    private void bindExecutorGauges(String executorName, ThreadPoolExecutor executor) {
+        Tags tags = Tags.of("executor", executorName);
+        meterRegistry.gauge("parallelcart.executor.active", tags, executor, ThreadPoolExecutor::getActiveCount);
+        meterRegistry.gauge("parallelcart.executor.pool.size", tags, executor, ThreadPoolExecutor::getPoolSize);
+        meterRegistry.gauge("parallelcart.executor.queue.size", tags, executor, current -> current.getQueue().size());
+        meterRegistry.gauge("parallelcart.executor.completed", tags, executor, ThreadPoolExecutor::getCompletedTaskCount);
     }
 }
