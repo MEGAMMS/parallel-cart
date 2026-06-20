@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /workspace
 
