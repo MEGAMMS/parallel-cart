@@ -1,42 +1,64 @@
-HELP.md
-target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+# Maven / Java build output
+/target/
+**/target/
+!src/**/target/
+*.class
 
-### STS ###
-.apt_generated
+# Maven wrapper files should stay visible when present
+!.mvn/wrapper/maven-wrapper.properties
+!.mvn/wrapper/maven-wrapper.jar
+
+# Generated logs, dumps, and profiling artifacts
+*.log
+*.hprof
+*.jfr
+hs_err_pid*
+replay_pid*
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# JMeter/performance output
+/apache-jmeter-*/
+/apache-jmeter-*.zip
+/jmeter.log
+*.jtl
+/reports/
+
+# Local report exports at repository root
+/parallel-cart-output.*
+/parallel-cart-final-*.pdf
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# STS / Eclipse
+.apt_generated/
 .classpath
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
-.sts4-cache
+.sts4-cache/
 
-### IntelliJ IDEA ###
-.idea
+# IntelliJ IDEA
+.idea/
 *.iws
 *.iml
 *.ipr
 
-### NetBeans ###
+# NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
+/build/
+**/build/
+!src/**/build/
 
-### VS Code ###
+# VS Code
 .vscode/
-
-# extension specific ignores
-parallel-cart-output.*
-
-/apache-jmeter-5.6.3
-/jmeter.log
-/jmeter
-/reports/jmeter
-/reports
