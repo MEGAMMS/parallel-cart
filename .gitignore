@@ -25,7 +25,21 @@ replay_pid*
 /apache-jmeter-*.zip
 /jmeter.log
 *.jtl
-/reports/
+
+# Keep small benchmark/bottleneck summaries in reports, ignore generated dashboards/raw runs
+/reports/jmeter/**
+!/reports/jmeter/
+!/reports/jmeter/git-before-after-summary.md
+/reports/**/checkout-dashboard/
+/reports/**/read-dashboard/
+/reports/**/before-checkout-dashboard/
+/reports/**/before-read-dashboard/
+/reports/**/after-checkout-dashboard/
+/reports/**/after-read-dashboard/
+/reports/**/fixed-checkout-dashboard/
+/reports/jmeter/git-history-*/
+/reports/jmeter/git-before/
+/reports/jmeter/git-after/
 
 # Local report exports at repository root
 /parallel-cart-output.*
