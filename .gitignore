@@ -43,7 +43,7 @@ replay_pid*
 
 # Local report exports at repository root
 /parallel-cart-output.*
-/parallel-cart-final-*.pdf
+
 
 # OS files
 .DS_Store
